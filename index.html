@@ -261,6 +261,56 @@ let editingStudentId = null;
 
 const romanMap = { "1": "II", "II": "III", "III": "IV", "IV": "V", "V": "VI", "VI": "VII", "VII": "VIII", "VIII": "IX", "IX": "X", "X": "XI", "XI": "XII", "XII": "Graduated" };
 
+// Default Student List Restored
+function ensureInitialStudents() {
+  if(db.students.length === 0) {
+    db.students = [
+      { id: "3709", name: "Adam Thomas Sonu Porunnakottu", sclass: "1", sdiv: "A", phone: "9544051586", remarks: "" },
+      { id: "3714", name: "Adam Xavier Manoj Punnavely", sclass: "1", sdiv: "A", phone: "9497393001", remarks: "" },
+      { id: "3728", name: "Cristiano Bibin Kattuppara", sclass: "1", sdiv: "A", phone: "9207574629", remarks: "" },
+      { id: "3718", name: "Deon David Shijo Arimattathil", sclass: "1", sdiv: "A", phone: "8714331020", remarks: "" },
+      { id: "3713", name: "Eljo George Vattakottayil", sclass: "1", sdiv: "A", phone: "9747123441", remarks: "" },
+      { id: "3717", name: "Iwan Shibu Velloor", sclass: "1", sdiv: "A", phone: "8606242521", remarks: "" },
+      { id: "3729", name: "Joseph Mathew Bibin Murickal", sclass: "1", sdiv: "A", phone: "9847229288", remarks: "" },
+      { id: "3726", name: "Joshua Paul Rince Muttathumalil", sclass: "1", sdiv: "A", phone: "9207313369", remarks: "" },
+      { id: "3708", name: "Joshua Tijo Paikattu", sclass: "1", sdiv: "A", phone: "7507056758", remarks: "" },
+      { id: "3723", name: "Steev Luke Jintu Manathara", sclass: "1", sdiv: "A", phone: "8113863602", remarks: "" },
+      { id: "3730", name: "Tony Jose Velloor", sclass: "1", sdiv: "A", phone: "", remarks: "" },
+      { id: "3722", name: "Aiby S V Vellanickal", sclass: "1", sdiv: "A", phone: "9656160285", remarks: "" },
+      { id: "3721", name: "Ameesha Ajeesh Parekandam", sclass: "1", sdiv: "A", phone: "9544843833", remarks: "" },
+      { id: "3707", name: "Anciya Mary Jomon Pukadiparambil", sclass: "1", sdiv: "A", phone: "9037613467", remarks: "" },
+      { id: "3711", name: "Angelina Rince Pathickal", sclass: "1", sdiv: "A", phone: "9605931819", remarks: "" },
+      { id: "3725", name: "Elana Anil Karuthedathu", sclass: "1", sdiv: "A", phone: "9544137084", remarks: "" },
+      { id: "3732", name: "Evana Maria Joseph Kainikkara", sclass: "1", sdiv: "A", phone: "9961553820", remarks: "" },
+      { id: "3710", name: "Isabel Thressia Felix Perumalil", sclass: "1", sdiv: "A", phone: "7559089136", remarks: "" },
+      { id: "3716", name: "Joscelin Maria Denny Chellamcott", sclass: "1", sdiv: "A", phone: "9544547280", remarks: "" },
+      { id: "3712", name: "Julia Anne Jintu Kizhakkechirayil", sclass: "1", sdiv: "A", phone: "7025562105", remarks: "" },
+      { id: "3719", name: "Mariam Joseph Poovathinkal", sclass: "1", sdiv: "A", phone: "9387632224", remarks: "" },
+      { id: "3715", name: "Min Elza Biju Velloor", sclass: "1", sdiv: "A", phone: "9895246848", remarks: "" },
+      { id: "3724", name: "Nathania Elsa Bibin Vazhakalayil", sclass: "1", sdiv: "A", phone: "9037330506", remarks: "" },
+      { id: "3727", name: "Rose Ann Abhijith Chomacheril", sclass: "1", sdiv: "A", phone: "9605098008", remarks: "" },
+      { id: "3731", name: "Sana Anna Stalin Thottiparambil", sclass: "1", sdiv: "A", phone: "", remarks: "" },
+      { id: "3720", name: "Serah Mariam Sebastian Kandathil", sclass: "1", sdiv: "A", phone: "9496385763", remarks: "" },
+      { id: "3699", name: "Emmanuvel Shinu Myladoorparambil", sclass: "II", sdiv: "A", phone: "9744940319", remarks: "" },
+      { id: "3677", name: "Jaiden Joby Nedumkallel", sclass: "II", sdiv: "A", phone: "", remarks: "" },
+      { id: "3706", name: "Jerin Joby Vattakottayil", sclass: "II", sdiv: "A", phone: "9526732854", remarks: "" },
+      { id: "3673", name: "Joel Thomas Paikkattu", sclass: "II", sdiv: "A", phone: "", remarks: "" },
+      { id: "3680", name: "Joshua MJ Mangalathil", sclass: "II", sdiv: "A", phone: "", remarks: "" },
+      { id: "3676", name: "Meric Tom Jikku Puthookariyil", sclass: "II", sdiv: "A", phone: "", remarks: "" },
+      { id: "3672", name: "Prayan Robins Ellichira", sclass: "II", sdiv: "A", phone: "9497086387", remarks: "" },
+      { id: "3674", name: "Ron Varghese Naickan Parambil", sclass: "II", sdiv: "A", phone: "", remarks: "" },
+      { id: "3700", name: "Evangelin Shinu Myladoorparambil", sclass: "II", sdiv: "A", phone: "", remarks: "" },
+      { id: "3678", name: "Hannah Rose Ajeesh Porunnakottu", sclass: "II", sdiv: "A", phone: "", remarks: "" },
+      { id: "3681", name: "Irin Mariya Prince Chfllakuttysheri", sclass: "II", sdiv: "A", phone: "", remarks: "" },
+      { id: "3679", name: "Jaidan Jyothis Mathew Kattupara", sclass: "II", sdiv: "A", phone: "", remarks: "" },
+      { id: "3675", name: "Jehiel Mary James Thurutthumalil", sclass: "II", sdiv: "A", phone: "", remarks: "" },
+      { id: "3683", name: "Jossina Ann Regi Chriyil", sclass: "II", sdiv: "A", phone: "", remarks: "" },
+      { id: "3682", name: "Mariam Rosa Manu Kuzhivelil", sclass: "II", sdiv: "A", phone: "8504066206", remarks: "" },
+      { id: "3684", name: "Vianne Grace Kunnumpuram", sclass: "II", sdiv: "A", phone: "", remarks: "" }
+    ];
+  }
+}
+
 // Handle Login Form Submit
 function handleLogin(e) {
   e.preventDefault();
@@ -285,6 +335,7 @@ auth.onAuthStateChanged(user => {
 
 // Save Data to Cloud Firestore
 function save() {
+  ensureInitialStudents();
   dbCloud.collection("libraryData").doc("mainStore").set(db)
     .then(() => {
       renderAll();
@@ -300,13 +351,17 @@ function loadCloudData() {
     .then((doc) => {
       if (doc.exists) {
         db = doc.data();
+        ensureInitialStudents();
       } else {
+        ensureInitialStudents();
         save();
       }
       renderAll();
     })
     .catch((error) => {
       console.log("Error loading data:", error);
+      ensureInitialStudents();
+      renderAll();
     });
 }
 
