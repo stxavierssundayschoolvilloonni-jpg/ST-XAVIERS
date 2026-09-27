@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Online Library Management System</title>
+
+<!-- Firebase App (Core) -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<!-- Firebase Authentication -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<!-- Firebase Firestore -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+<style>
+:root{--primary:#1f4e78;--bg:#f4f7fb;--card:#fff;--text:#1f2937;--border:#dbe3ec;--success:#15803d;--danger:#b91c1c}
+*{box-sizing:border-box} body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{background:var(--primary);color:white;padding:16px 24px;display:flex;justify-content:space-between;align-items:center} 
+header h1{margin:0;font-size:22px}
+nav{display:flex;gap:6px;flex-wrap:wrap;background:white;padding:10px 20px;border-bottom:1px solid var(--border)}
+button{border:0;border-radius:6px;padding:9px 14px;cursor:pointer;background:var(--primary);color:#fff;font-weight:600;font-size:13px}
+button.secondary{background:#64748b} button.danger{background:var(--danger)} button:hover{opacity:0.9}
+.container{max-width:1400px;margin:auto;padding:20px}
+.tab{display:none}.tab.active{display:block}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.card{background:var(--card);padding:18px;border-radius:10px;box-shadow:0 2px 8px #00000012}
+.card .num{font-size:28px;font-weight:bold;color:var(--primary);margin-top:5px}
+form{background:white;padding:18px;border-radius:10px;margin-bottom:18px;box-shadow:0 1px 4px #0000000a}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+label{font-size:13px;font-weight:bold;display:block;margin-bottom:4px} input,select{width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:6px;font-size:14px}
+input:read-only {background-color: #f1f5f9; color: #475569;}
+.table-wrap{overflow:auto;background:white;border-radius:10px;box-shadow:0 1px 4px #0000000a}
+table{width:100%;border-collapse:collapse;min-width:900px} th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;font-size:14px}
+th{background:#eaf1f8;font-weight:bold} .actions{display:flex;gap:6px}.small{font-size:12px;color:#64748b}
+.search{margin:12px 0;max-width:400px}
+.status{font-weight:bold}.overdue{color:var(--danger)}.returned{color:var(--success)}
+.filter-bar { display: flex; gap: 12px; align-items: center; margin: 12px 0; flex-wrap: wrap; justify-content: space-between; }
+.filter-left { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.filter-bar input, .filter-bar select { max-width: 250px; margin-top: 0; }
+
+/* Modal Styles */
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+.modal.active { display: flex; }
+.modal-content { background: white; padding: 24px; border-radius: 10px; width: 90%; max-width: 850px; max-height: 85vh; overflow-y: auto; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+.modal-header h3 { margin: 0; color: var(--primary); }
+.close-btn { background: #64748b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<!-- Sign-In Screen Overlay -->
+<div id="authScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);display:flex;justify-content:center;align-items:center;z-index:9999;">
+  <form onsubmit="handleLogin(event)" style="width:100%;max-width:350px;background:white;padding:24px;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.1)">
+    <h2 style="margin-top:0;color:var(--primary);">🔐 Library Admin Login</h2>
+    <div style="margin-bottom:12px;">
+      <label>Email</label>
+      <input type="email" id="loginEmail" required placeholder="admin@library.com" style="width:100%;padding:8px;margin-top:4px;">
+    </div>
+    <div style="margin-bottom:16px;">
+      <label>Password</label>
+      <input type="password" id="loginPassword" required placeholder="••••••••" style="width:100%;padding:8px;margin-top:4px;">
+    </div>
+    <button type="submit" style="width:100%;padding:10px;">Sign In</button>
+  </form>
+</div>
+
+<header>
+  <h1>📚 Online Library Management System</h1>
+  <div class="small" style="color:#dbeafe">Cloud Synced & Online</div>
+</header>
+<nav>
+<button onclick="showTab('dashboard')">Dashboard</button>
+<button onclick="showTab('lent')">Book Issue</button>
+<button onclick="showTab('returnTab')">Book Return</button>
+<button onclick="showTab('students')">Students</button>
+<button onclick="showTab('books')">Book Entry</button>
+<button class="secondary" onclick="backup()">Backup JSON</button>
+<button class="secondary" onclick="restore()">Restore JSON</button>
+</nav>
+
+<div class="container">
+<!-- Dashboard Tab -->
+<section id="dashboard" class="tab active">
+<h2>Dashboard Overview</h2>
+<div class="cards">
+<div class="card"><div>Total Books</div><div class="num" id="dBooks">0</div></div>
+<div class="card"><div>Total Copies</div><div class="num" id="dCopies">0</div></div>
+<div class="card"><div>Available Copies</div><div class="num" id="dAvail">0</div></div>
+<div class="card"><div>Books Lent</div><div class="num" id="dLent">0</div></div>
+<div class="card" style="cursor:pointer;" onclick="openOverdueModal()"><div>Overdue Items</div><div class="num" id="dOverdue" style="color:var(--danger)">0</div><div class="small" style="margin-top:6px; color:var(--primary); text-decoration:underline;">Click to view report</div></div>
+</div>
+
+<div style="margin-top:28px; display:flex; justify-content:space-between; align-items:center;">
+  <h3>⚠️ Current Overdue Students & Books</h3>
+  <button class="secondary" onclick="exportOverdueCSV()">Export Overdue CSV</button>
+</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Sl No.</th>
+          <th>Academic Year</th>
+          <th>Student Name</th>
+          <th>Class / Div</th>
+          <th>Book Title</th>
+          <th>Due Date</th>
+          <th>Days Overdue</th>
+        </tr>
+      </thead>
+      <tbody id="dashboardOverdueRows">
+        <tr><td colspan="7" class="small">No overdue items.[cite: 1]</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Book Issue Tab -->
+<section id="lent" class="tab">
+<div style="display:flex; justify-content:space-between; align-items:center;">
+  <h2>Book Issue</h2>
+  <div style="display:flex; gap:8px;">
+    <button class="secondary" onclick="exportLentCSV()">Export Issue CSV</button>
+    <button class="danger" onclick="clearLentRecords()">Clear Issue Records</button>
+  </div>
+</div>
+<form onsubmit="lendBook(event)"><div class="grid">
+<div>
+  <label>Academic Year</label>
+  <input id="fyear" required placeholder="e.g. 2026-2027">
+</div>
+<div>
+  <label>Student Name</label>
+  <input id="lsname" list="studentNamesList" oninput="onStudentNameInput()" required placeholder="Select student name...">
+  <datalist id="studentNamesList"></datalist>
+</div>
+<div><label>Student ID<input id="lsid" readonly></label></div>
+<div><label>Class<input id="lclass" readonly></label></div>
+<div><label>Division<input id="ldiv" readonly></label></div>
+<div>
+  <label>Book ID</label>
+  <input id="lbid" list="bookIdsList" oninput="onBookIdInput()" required placeholder="Select Book ID...">
+  <datalist id="bookIdsList"></datalist>
+</div>
+<div><label>Book Title<input id="lbtitle" readonly></label></div>
+<div><label>Issue Date<input id="issue" type="date" required></label></div>
+<div><label>Due Date<input id="due" type="date" required></label></div>
+</div><br><button type="submit">Issue Book</button></form>
+
+<input class="search" id="lentSearch" oninput="renderLent()" placeholder="Search issue records...">
+<div class="table-wrap"><table><thead><tr><th>Sl No.</th><th>Academic Year</th><th>Student Name</th><th>Student ID</th><th>Class / Div</th><th>Book</th><th>Issue Date</th><th>Due Date</th><th>Return Date</th><th>Status</th></tr></thead><tbody id="lentRows"></tbody></table></div>
+</section>
+
+<!-- Book Return Tab -->
+<section id="returnTab" class="tab">
+<h2>Book Return Management</h2>
+<input class="search" id="returnSearch" oninput="renderReturnTab()" placeholder="Search issued books to process return...">
+<div class="table-wrap"><table><thead><tr><th>Sl No.</th><th>Academic Year</th><th>Student Name</th><th>Student ID</th><th>Class / Div</th><th>Book</th><th>Issue Date</th><th>Due Date</th><th>Status</th><th>Action</th></tr></thead><tbody id="returnRows"></tbody></table></div>
+</section>
+
+<!-- Students Tab -->
+<section id="students" class="tab">
+<div style="display:flex; justify-content:space-between; align-items:center;">
+  <h2>Student Management</h2>
+  <div style="display:flex; gap:8px;">
+    <button onclick="openPromoteModal()" style="background:var(--success)">Promote Classes</button>
+    <button class="secondary" onclick="exportStudentsCSV()">Export Students CSV</button>
+  </div>
+</div>
+<form id="studentForm" onsubmit="addStudent(event)"><div class="grid">
+<div><label>Student ID<input id="sid" required placeholder="e.g. ST001"></label></div>
+<div><label>Student Name<input id="sname" required placeholder="Full Name"></label></div>
+<div><label>Class<input id="sclass" required placeholder="e.g. 1, II, X"></label></div>
+<div><label>Division<input id="sdiv" required placeholder="e.g. A"></label></div>
+<div><label>Phone<input id="phone" placeholder="Contact number"></label></div>
+<div><label>Remarks<input id="sremarks" placeholder="Optional notes"></label></div>
+</div><br><button id="studentFormBtn" type="submit">Add Student</button></form>
+
+<div class="filter-bar">
+  <div class="filter-left">
+    <input class="search" id="studentSearch" oninput="renderStudents()" placeholder="Search students by name, ID...">
+    <div>
+      <label for="classFilter" style="display:inline-block; margin-right:6px;">Filter by Class:</label>
+      <select id="classFilter" onchange="renderStudents()" style="display:inline-block; width:auto; padding:7px;">
+        <option value="">All Classes</option>
+        <option value="1">1</option>
+        <option value="II">II</option>
+        <option value="III">III</option>
+        <option value="IV">IV</option>
+        <option value="V">V</option>
+        <option value="VI">VI</option>
+        <option value="VII">VII</option>
+        <option value="VIII">VIII</option>
+        <option value="IX">IX</option>
+        <option value="X">X</option>
+        <option value="XI">XI</option>
+        <option value="XII">XII</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="table-wrap"><table><thead><tr><th>Student ID</th><th>Student Name</th><th>Class & Division</th><th>Phone</th><th>Actions</th></tr></thead><tbody id="studentRows"></tbody></table></div>
+</section>
+
+<!-- Book Entry Tab -->
+<section id="books" class="tab">
+<div style="display:flex; justify-content:space-between; align-items:center;">
+  <h2>Book Inventory Entry</h2>
+  <button class="secondary" onclick="exportBooksCSV()">Export Books CSV</button>
+</div>
+<form id="bookForm" onsubmit="addBook(event)">
+<div class="grid">
+<div><label>Book ID<input id="bookId" required placeholder="e.g. BK001"></label></div>
+<div><label>Book Title<input id="title" required placeholder="Title"></label></div>
+<div><label>Author<input id="author" placeholder="Author name"></label></div>
+<div><label>Publisher<input id="publisher" placeholder="Publisher"></label></div>
+<div><label>Edition<input id="edition" placeholder="Edition"></label></div>
+<div><label>Year<input id="year" type="number" placeholder="Year"></label></div>
+<div><label>Shelf<input id="shelf" placeholder="Shelf location"></label></div>
+<div><label>Remarks<input id="remarks" placeholder="Notes"></label></div>
+</div><br><button id="bookFormBtn" type="submit">Add Book</button>
+</form>
+
+<input class="search" id="bookSearch" oninput="renderBooks()" placeholder="Search library catalog...">
+<div class="table-wrap"><table><thead><tr><th>Book ID</th><th>Book Title</th><th>Author</th><th>Shelf</th><th>Actions</th></tr></thead><tbody id="bookRows"></tbody></table></div>
+</section>
+</div>
+
+<!-- Details / Promote Modal -->
+<div id="detailModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modalTitle">Details</h3>
+      <button class="close-btn" onclick="closeModal()">Close</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+// Firebase Configuration Setup
+const firebaseConfig = {
+  apiKey: "AIzaSyC71fp7M6V2i_XkkulGxmR85zxaScQahoE",
+  authDomain: "library-management-d6854.firebaseapp.com",
+  projectId: "library-management-d6854",
+  storageBucket: "library-management-d6854.firebasestorage.app",
+  messagingSenderId: "470057206846",
+  appId: "1:470057206846:web:41e54cb081ed5c9c717d6f",
+  measurementId: "G-3CN5HKJXDX"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const dbCloud = firebase.firestore();
+
+let db = { books: [], students: [], lent: [] };
+let editingBookId = null;
+let editingStudentId = null;
+
+const romanMap = { "1": "II", "II": "III", "III": "IV", "IV": "V", "V": "VI", "VI": "VII", "VII": "VIII", "VIII": "IX", "IX": "X", "X": "XI", "XI": "XII", "XII": "Graduated" };
+
+// Handle Login Form Submit
+function handleLogin(e) {
+  e.preventDefault();
+  let email = document.getElementById('loginEmail').value;
+  let pass = document.getElementById('loginPassword').value;
+
+  auth.signInWithEmailAndPassword(email, pass)
+    .catch(error => {
+      alert("Login Failed: " + error.message);
+    });
+}
+
+// Monitor User Authentication State
+auth.onAuthStateChanged(user => {
+  if (user) {
+    document.getElementById('authScreen').style.display = 'none';
+    loadCloudData(); // Fetch live data from online database
+  } else {
+    document.getElementById('authScreen').style.display = 'flex';
+  }
+});
+
+// Save Data to Cloud Firestore instead of LocalStorage
+function save() {
+  dbCloud.collection("libraryData").doc("mainStore").set(db)
+    .then(() => {
+      renderAll();
+    })
+    .catch(error => {
+      console.error("Error saving data: ", error);
+    });
+}
+
+// Load Data from Cloud Firestore
+function loadCloudData() {
+  dbCloud.collection("libraryData").doc("mainStore").get()
+    .then((doc) => {
+      if (doc.exists) {
+        db = doc.data();
+      } else {
+        save(); // Initialize database if empty
+      }
+      renderAll();
+    })
+    .catch((error) => {
+      console.log("Error loading data:", error);
+    });
+}
+
+function initFinancialYear() {
+  let now = new Date();
+  let y = now.getFullYear();
+  let m = now.getMonth();
+  let fyearStr = m >= 3 ? `${y}-${y+1}` : `${y-1}-${y}`;
+  let fyearInput = document.getElementById('fyear');
+  if(fyearInput && !fyearInput.value) {
+    fyearInput.value = fyearStr;
+  }
+}
+
+function showTab(id){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function val(id){return document.getElementById(id).value.trim()}
+
+function addBook(e){
+  e.preventDefault(); 
+  let id = val('bookId');
+  if(editingBookId) {
+    let book = db.books.find(x => x.id === editingBookId);
+    if(book) {
+      book.title = val('title');
+      book.author = val('author');
+      book.publisher = val('publisher');
+      book.edition = val('edition');
+      book.year = val('year');
+      book.shelf = val('shelf');
+      book.remarks = val('remarks');
+      
+      db.lent.forEach(l => {
+        if(l.bookId === id) {
+          l.bookTitle = book.title;
+        }
+      });
+    }
+    editingBookId = null;
+    document.getElementById('bookId').readOnly = false;
+    document.getElementById('bookFormBtn').textContent = 'Add Book';
+  } else {
+    if(db.books.some(x=>x.id===id)){alert('Book ID already exists');return}
+    db.books.push({
+      id: id,
+      title: val('title'),
+      author: val('author'),
+      publisher: val('publisher'),
+      edition: val('edition'),
+      year: val('year'),
+      shelf: val('shelf'),
+      remarks: val('remarks')
+    });
+  }
+  document.getElementById('bookForm').reset();
+  save();
+}
+
+function editBook(id) {
+  let b = db.books.find(x => x.id === id);
+  if(!b) return;
+  document.getElementById('bookId').value = b.id;
+  document.getElementById('bookId').readOnly = true;
+  document.getElementById('title').value = b.title || '';
+  document.getElementById('author').value = b.author || '';
+  document.getElementById('publisher').value = b.publisher || '';
+  document.getElementById('edition').value = b.edition || '';
+  document.getElementById('year').value = b.year || '';
+  document.getElementById('shelf').value = b.shelf || '';
+  document.getElementById('remarks').value = b.remarks || '';
+  editingBookId = id;
+  document.getElementById('bookFormBtn').textContent = 'Update Book';
+  showTab('books');
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function addStudent(e){
+  e.preventDefault();
+  let id = val('sid');
+  if(editingStudentId) {
+    let student = db.students.find(x => x.id === editingStudentId);
+    if(student) {
+      student.name = val('sname');
+      student.sclass = val('sclass');
+      student.sdiv = val('sdiv');
+      student.phone = val('phone');
+      student.remarks = val('sremarks');
+      
+      db.lent.forEach(l => {
+        if(l.studentId === id) {
+          l.studentName = student.name;
+          l.studentClass = student.sclass;
+          l.studentDivision = student.sdiv;
+        }
+      });
+    }
+    editingStudentId = null;
+    document.getElementById('sid').readOnly = false;
+    document.getElementById('studentFormBtn').textContent = 'Add Student';
+  } else {
+    if(db.students.some(x=>x.id===id)){alert('Student ID already exists');return}
+    db.students.push({
+      id: id,
+      name: val('sname'),
+      sclass: val('sclass'),
+      sdiv: val('sdiv'),
+      phone: val('phone'),
+      remarks: val('sremarks')
+    });
+  }
+  document.getElementById('studentForm').reset();
+  save();
+}
+
+function editStudent(id) {
+  let s = db.students.find(x => x.id === id);
+  if(!s) return;
+  document.getElementById('sid').value = s.id;
+  document.getElementById('sid').readOnly = true;
+  document.getElementById('sname').value = s.name || '';
+  document.getElementById('sclass').value = s.sclass || '';
+  document.getElementById('sdiv').value = s.sdiv || '';
+  document.getElementById('phone').value = s.phone || '';
+  document.getElementById('sremarks').value = s.remarks || '';
+  editingStudentId = id;
+  document.getElementById('studentFormBtn').textContent = 'Update Student';
+  showTab('students');
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+function openPromoteModal() {
+  document.getElementById('modalTitle').textContent = `Promote Students to Next Class`;
+  let html = `
+    <p>This will advance all students to their next consecutive class level (e.g., Class 1 becomes II, Class II becomes III, etc.). Class XII students will be marked as Graduated.</p>
+    <br>
+    <button type="button" onclick="executePromotion()">Confirm & Promote All Students</button>
+  `;
+  document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('detailModal').classList.add('active');
+}
+
+function executePromotion() {
+  db.students.forEach(s => {
+    let currentClass = (s.sclass || "").trim();
+    if(romanMap[currentClass]) {
+      s.sclass = romanMap[currentClass];
+    }
+  });
+  save();
+  closeModal();
+  alert('All students have been successfully promoted to their next class!');
+}
+
+function updateDatalists() {
+  let sList = document.getElementById('studentNamesList');
+  if(sList) {
+    sList.innerHTML = db.students.map(s => `<option value="${s.name}">`).join('');
+  }
+  let bList = document.getElementById('bookIdsList');
+  if(bList) {
+    bList.innerHTML = db.books.map(b => `<option value="${b.id}">`).join('');
+  }
+}
+
+function onStudentNameInput() {
+  let name = val('lsname');
+  let student = db.students.find(s => s.name.toLowerCase() === name.toLowerCase());
+  if(student) {
+    document.getElementById('lsid').value = student.id;
+    document.getElementById('lclass').value = student.sclass || '';
+    document.getElementById('ldiv').value = student.sdiv || '';
+  } else {
+    document.getElementById('lsid').value = '';
+    document.getElementById('lclass').value = '';
+    document.getElementById('ldiv').value = '';
+  }
+}
+
+function onBookIdInput() {
+  let id = val('lbid');
+  let book = db.books.find(b => b.id.toLowerCase() === id.toLowerCase());
+  if(book) {
+    document.getElementById('lbtitle').value = book.title;
+  } else {
+    document.getElementById('lbtitle').value = '';
+  }
+}
+
+function lendBook(e){
+  e.preventDefault();
+  let nameVal = val('lsname');
+  let s = db.students.find(x => x.name.toLowerCase() === nameVal.toLowerCase());
+  if(!s){alert('Student not found or select a valid student name.');return} 
+  let sid = s.id;
+  let bid = val('lbid');
+  let b = db.books.find(x => x.id === bid);
+  if(!b){alert('Book ID not found.');return} 
+  if(db.lent.filter(x=>x.bookId===bid&&x.status!=='Returned').length>=1){alert('This book is already lent out.');return}
+  if(db.lent.some(x=>x.studentId===sid&&x.bookId===bid&&x.status!=='Returned')){alert('This student already has this active book copy issued.');return}
+  
+  db.lent.push({
+    fyear: val('fyear') || '2026-2027',
+    studentId: sid,
+    studentName: s.name,
+    studentClass: s.sclass,
+    studentDivision: s.sdiv,
+    bookId: bid,
+    bookTitle: b.title,
+    issue: val('issue'),
+    due: val('due'),
+    returnDate: '',
+    status: 'Issued'
+  });
+  
+  let currentFYear = document.getElementById('fyear').value;
+  e.target.reset();
+  document.getElementById('fyear').value = currentFYear;
+  document.getElementById('lsid').value = '';
+  document.getElementById('lclass').value = '';
+  document.getElementById('ldiv').value = '';
+  document.getElementById('lbtitle').value = '';
+  document.getElementById('issue').value = new Date().toISOString().slice(0,10);
+  save();
+}
+
+function returnBook(dbIndex){
+  let x=db.lent[dbIndex];
+  if(!x || x.status==='Returned')return;
+  x.status='Returned';
+  x.returnDate=new Date().toISOString().slice(0,10);
+  save();
+}
+
+function clearLentRecords() {
+  if(confirm('Are you sure you want to clear all book issue records? This action cannot be undone.')) {
+    db.lent = [];
+    save();
+    alert('All book issue records have been successfully cleared.');
+  }
+}
+
+function delBook(i){if(confirm('Delete this book from inventory?')){db.books.splice(i,1);save()}}
+function delStudent(i){if(confirm('Delete this student profile?')){db.students.splice(i,1);save()}}
+
+function updateStatus(x){
+  if(x.status==='Returned')return; 
+  let todayStr = new Date().toISOString().slice(0,10);
+  if(x.due && x.due < todayStr) {
+    x.status='Overdue';
+  }
+}
+
+function getOverdueDays(dueDate) {
+  let today = new Date();
+  today.setHours(0,0,0,0);
+  let due = new Date(dueDate);
+  due.setHours(0,0,0,0);
+  let diffTime = today - due;
+  let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays > 0 ? diffDays : 0;
+}
+
+function openOverdueModal() {
+  db.lent.forEach(updateStatus);
+  let overdueRecords = db.lent.filter(x => x.status === 'Overdue');
+  
+  document.getElementById('modalTitle').textContent = `Overdue Books Report (${overdueRecords.length})`;
+  
+  let html = `<h4>Currently Overdue Books & Students</h4>`;
+
+  if(overdueRecords.length === 0) {
+    html += `<p class="small">No overdue books right now![cite: 1]</p>`;
+  } else {
+    html += `
+      <div class="table-wrap"><table>
+        <thead><tr><th>Sl No.</th><th>Academic Year</th><th>Student Name</th><th>Class / Div</th><th>Book Title</th><th>Due Date</th><th>Days Overdue</th></tr></thead>
+        <tbody>
+          ${overdueRecords.map((r, idx) => {
+            let days = getOverdueDays(r.due);
+            return `<tr>
+              <td>${idx + 1}</td>
+              <td>${r.fyear || '-'}</td>
+              <td>${r.studentName}</td>
+              <td>${r.studentClass \vert{}\vert{} '-'} /${r.studentDivision || '-'}</td>
+              <td>${r.bookTitle}<br><span class="small">${r.bookId}</span></td>
+              <td>${r.due}</td>
+              <td><span class="status overdue">${days} day(s) overdue</span></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table></div>
+    `;
+  }
+
+  document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('detailModal').classList.add('active');
+}
+
+function openStudentDetails(studentId) {
+  let student = db.students.find(s => s.id === studentId);
+  if(!student) return;
+  
+  let records = db.lent.filter(x => x.studentId === studentId);
+  let totalLent = records.length;
+  let returnedCount = records.filter(x => x.status === 'Returned').length;
+  let activeCount = totalLent - returnedCount;
+
+  document.getElementById('modalTitle').textContent = `Student Details: ${student.name} (${student.id})`;
+  
+  let html = `
+    <p><strong>Class:</strong> ${student.sclass || '-'} | <strong>Division:</strong> ${student.sdiv || '-'} | <strong>Phone:</strong> ${student.phone || '-'}</p>
+    <p><strong>Total Books Borrowed:</strong> ${totalLent} | <span class="status returned">Returned: ${returnedCount}</span> | <span class="status overdue">Active: ${activeCount}</span></p>
+    <h4>Lending History</h4>
+  `;
+
+  if(records.length === 0) {
+    html += `<p class="small">No borrowing history for this student.</p>`;
+  } else {
+    html += `
+      <div class="table-wrap"><table>
+        <thead><tr><th>Sl No.</th><th>Academic Year</th><th>Book Name</th><th>Book ID</th><th>Issue Date</th><th>Due Date</th><th>Return Date</th><th>Status</th></tr></thead>
+        <tbody>
+          ${records.map((r, idx) => {
+            let statusText = r.status;
+            if(r.status === 'Overdue') {
+              statusText = `Overdue (${getOverdueDays(r.due)} days late)`;
+            }
+            return `<tr>
+              <td>${idx + 1}</td>
+              <td>${r.fyear || '-'}</td>
+              <td>${r.bookTitle}</td>
+              <td>${r.bookId}</td>
+              <td>${r.issue}</td>
+              <td>${r.due}</td>
+              <td>${r.returnDate || '-'}</td>
+              <td class="status ${r.status==='Overdue'?'overdue':r.status==='Returned'?'returned':''}">${statusText}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table></div>
+    `;
+  }
+
+  document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('detailModal').classList.add('active');
+}
+
+function openBookDetails(bookId) {
+  let book = db.books.find(b => b.id === bookId);
+  if(!book) return;
+
+  let records = db.lent.filter(x => x.bookId === bookId);
+  let totalLent = records.length;
+  let activeLent = records.filter(x => x.status !== 'Returned').length;
+
+  document.getElementById('modalTitle').textContent = `Book Details: ${book.title} (ID: ${book.id})`;
+
+  let html = `
+    <p><strong>Author:</strong> ${book.author || '-'} | <strong>Publisher:</strong> ${book.publisher || '-'} | <strong>Shelf:</strong> ${book.shelf || '-'}</p>
+    <p><strong>Total Times Issued:</strong> ${totalLent} | <span class="status overdue">Currently Lent Out: ${activeLent}</span></p>
+    <h4>Student Borrowing History</h4>
+  `;
+
+  if(records.length === 0) {
+    html += `<p class="small">No borrowing history for this book yet.</p>`;
+  } else {
+    html += `
+      <div class="table-wrap"><table>
+        <thead><tr><th>Sl No.</th><th>Academic Year</th><th>Student Name</th><th>Class / Div</th><th>Issue Date</th><th>Due Date</th><th>Return Date</th><th>Status</th></tr></thead>
+        <tbody>
+          ${records.map((r, idx) => {
+            let statusText = r.status;
+            if(r.status === 'Overdue') {
+              statusText = `Overdue (${getOverdueDays(r.due)} days late)`;
+            }
+            return `<tr>
+              <td>${idx + 1}</td>
+              <td>${r.fyear || '-'}</td>
+              <td>${r.studentName}</td>
+              <td>${r.studentClass \vert{}\vert{} '-'} /${r.studentDivision || '-'}</td>
+              <td>${r.issue}</td>
+              <td>${r.due}</td>
+              <td>${r.returnDate || '-'}</td>
+              <td class="status ${r.status==='Overdue'?'overdue':r.status==='Returned'?'returned':''}">${statusText}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table></div>
+    `;
+  }
+
+  document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('detailModal').classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('detailModal').classList.remove('active');
+}
+
+function renderBooks(){
+  let q=(document.getElementById('bookSearch').value||'').toLowerCase();
+  document.getElementById('bookRows').innerHTML=db.books.map((b,i)=>{
+    let rowText = (b.id + ' ' + b.title + ' ' + b.author + ' ' + b.shelf).toLowerCase();
+    if(!rowText.includes(q)) return '';
+    return `<tr>
+      <td>${b.id}</td>
+      <td>${b.title}</td>
+      <td>${b.author || '-'}</td>
+      <td>${b.shelf || '-'}</td>
+      <td class="actions">
+        <button type="button" onclick="openBookDetails('${b.id}')">Details</button>
+        <button type="button" class="secondary" onclick="editBook('${b.id}')">Edit</button>
+        <button type="button" class="danger" onclick="delBook(${i})">Delete</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderStudents(){
+  let q = (document.getElementById('studentSearch').value || '').toLowerCase();
+  let selectedClass = document.getElementById('classFilter').value;
+
+  document.getElementById('studentRows').innerHTML = db.students.map((s, i) => {
+    let rowText = (s.id + ' ' + s.name + ' ' + s.sclass + ' ' + s.sdiv + ' ' + s.phone).toLowerCase();
+    if(q && !rowText.includes(q)) return '';
+    if(selectedClass && s.sclass !== selectedClass) return '';
+
+    return `<tr>
+      <td>${s.id}</td>
+      <td>${s.name}</td>
+      <td>Class: ${s.sclass||'-'} | Div: ${s.sdiv||'-'}</td>
+      <td>${s.phone || '-'}</td>
+      <td class="actions">
+        <button type="button" onclick="openStudentDetails('${s.id}')">Details</button>
+        <button type="button" class="secondary" onclick="editStudent('${s.id}')">Edit</button>
+        <button type="button" class="danger" onclick="delStudent(${i})">Delete</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderLent(){
+  db.lent.forEach(updateStatus);
+  updateDatalists();
+  let q=(document.getElementById('lentSearch').value||'').toLowerCase();
+  let slNo = 1;
+  document.getElementById('lentRows').innerHTML=db.lent.map((x,i)=>{
+    let rowText = JSON.stringify(x).toLowerCase();
+    if(!rowText.includes(q)) return '';
+    let displayStatus = x.status;
+    if(x.status === 'Overdue') {
+      displayStatus = `Overdue (${getOverdueDays(x.due)} days)`;
+    }
+    return `<tr>
+      <td>${slNo++}</td>
+      <td>${x.fyear || '-'}</td>
+      <td>${x.studentName}</td>
+      <td>${x.studentId}</td>
+      <td>${x.studentClass || '-'} / ${x.studentDivision || '-'}</td>
+      <td>${x.bookTitle}<br><span class="small">${x.bookId}</span></td>
+      <td>${x.issue}</td>
+      <td>${x.due}</td>
+      <td>${x.returnDate || '-'}</td>
+      <td class="status ${x.status==='Overdue'?'overdue':x.status==='Returned'?'returned':''}">${displayStatus}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderReturnTab(){
+  db.lent.forEach(updateStatus);
+  let q=(document.getElementById('returnSearch').value||'').toLowerCase();
+  let activeLentRecords = db.lent.map((item, originalIndex) => ({item, originalIndex})).filter(obj => obj.item.status !== 'Returned');
+  
+  let slNo = 1;
+  document.getElementById('returnRows').innerHTML = activeLentRecords.map(({item: x, originalIndex: i})=>{
+    let rowText = JSON.stringify(x).toLowerCase();
+    if(!rowText.includes(q)) return '';
+    let displayStatus = x.status;
+    if(x.status === 'Overdue') {
+      displayStatus = `Overdue (${getOverdueDays(x.due)} days due)`;
+    }
+    return `<tr>
+      <td>${slNo++}</td>
+      <td>${x.fyear || '-'}</td>
+      <td>${x.studentName}</td>
+      <td>${x.studentId}</td>
+      <td>${x.studentClass || '-'} / ${x.studentDivision || '-'}</td>
+      <td>${x.bookTitle}<br><span class="small">${x.bookId}</span></td>
+      <td>${x.issue}</td>
+      <td>${x.due}</td>
+      <td class="status ${x.status==='Overdue'?'overdue':''}">${displayStatus}</td>
+      <td><button type="button" onclick="returnBook(${i})">Return Book</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderDashboardOverdueTable() {
+  db.lent.forEach(updateStatus);
+  let overdueRecords = db.lent.filter(x => x.status === 'Overdue');
+  let tbody = document.getElementById('dashboardOverdueRows');
+  
+  if(overdueRecords.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" class="small">No overdue items right now.[cite: 1]</td></tr>`;
+    return;
+  }
+
+  let slNo = 1;
+  tbody.innerHTML = overdueRecords.map(r => {
+    let days = getOverdueDays(r.due);
+    return `<tr>
+      <td>${slNo++}</td>
+      <td>${r.fyear || '-'}</td>
+      <td>${r.studentName}</td>
+      <td>${r.studentClass || '-'} / ${r.studentDivision || '-'}</td>
+      <td>${r.bookTitle} <span class="small">(${r.bookId})</span></td>
+      <td>${r.due}</td>
+      <td><span class="status overdue">${days} day(s) overdue</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function downloadCSV(filename, csvContent) {
+  let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  let url = URL.createObjectURL(blob);
+  let a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportBooksCSV() {
+  if(db.books.length === 0) { alert('No books available to export.'); return; }
+  let headers = ['Book ID', 'Title', 'Author', 'Publisher', 'Edition', 'Year', 'Shelf', 'Remarks'];
+  let rows = db.books.map(b => [
+    `"${b.id || ''}"`,
+    `"${(b.title || '').replace(/"/g, '""')}"`,
+    `"${(b.author || '').replace(/"/g, '""')}"`,
+    `"${(b.publisher || '').replace(/"/g, '""')}"`,
+    `"${(b.edition || '').replace(/"/g, '""')}"`,
+    `"${b.year || ''}"`,
+    `"${(b.shelf || '').replace(/"/g, '""')}"`,
+    `"${(b.remarks || '').replace(/"/g, '""')}"`
+  ]);
+  let csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  downloadCSV('books_export.csv', csv);
+}
+
+function exportStudentsCSV() {
+  if(db.students.length === 0) { alert('No students available to export.'); return; }
+  let headers = ['Student ID', 'Student Name', 'Class', 'Division', 'Phone', 'Remarks'];
+  let rows = db.students.map(s => [
+    `"${s.id || ''}"`,
+    `"${(s.name || '').replace(/"/g, '""')}"`,
+    `"${(s.sclass || '').replace(/"/g, '""')}"`,
+    `"${(s.sdiv || '').replace(/"/g, '""')}"`,
+    `"${(s.phone || '').replace(/"/g, '""')}"`,
+    `"${(s.remarks || '').replace(/"/g, '""')}"`
+  ]);
+  let csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  downloadCSV('students_export.csv', csv);
+}
+
+function exportLentCSV() {
+  if(db.lent.length === 0) { alert('No issue records available to export.'); return; }
+  let headers = ['Sl No.', 'Academic Year', 'Student Name', 'Student ID', 'Class', 'Division', 'Book ID', 'Book Title', 'Issue Date', 'Due Date', 'Return Date', 'Status'];
+  let rows = db.lent.map((x, idx) => [
+    `"${idx + 1}"`,
+    `"${x.fyear || ''}"`,
+    `"${(x.studentName || '').replace(/"/g, '""')}"`,
+    `"${x.studentId || ''}"`,
+    `"${(x.studentClass || '').replace(/"/g, '""')}"`,
+    `"${(x.studentDivision || '').replace(/"/g, '""')}"`,
+    `"${x.bookId || ''}"`,
+    `"${(x.bookTitle || '').replace(/"/g, '""')}"`,
+    `"${x.issue || ''}"`,
+    `"${x.due || ''}"`,
+    `"${x.returnDate || ''}"`,
+    `"${x.status || ''}"`
+  ]);
+  let csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  downloadCSV('book_issue_records_export.csv', csv);
+}
+
+function exportOverdueCSV() {
+  db.lent.forEach(updateStatus);
+  let overdueRecords = db.lent.filter(x => x.status === 'Overdue');
+  if(overdueRecords.length === 0) { alert('No overdue records available to export.'); return; }
+  let headers = ['Sl No.', 'Academic Year', 'Student Name', 'Student ID', 'Class', 'Division', 'Book ID', 'Book Title', 'Issue Date', 'Due Date', 'Days Overdue'];
+  let rows = overdueRecords.map((r, idx) => [
+    `"${idx + 1}"`,
+    `"${r.fyear || ''}"`,
+    `"${(r.studentName || '').replace(/"/g, '""')}"`,
+    `"${r.studentId || ''}"`,
+    `"${(r.studentClass || '').replace(/"/g, '""')}"`,
+    `"${(r.studentDivision || '').replace(/"/g, '""')}"`,
+    `"${r.bookId || ''}"`,
+    `"${(r.bookTitle || '').replace(/"/g, '""')}"`,
+    `"${r.issue || ''}"`,
+    `"${r.due || ''}"`,
+    `"${getOverdueDays(r.due)}"`
+  ]);
+  let csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  downloadCSV('overdue_records_export.csv', csv);
+}
+
+function backup(){
+  let a=document.createElement('a');
+  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(db,null,2));
+  a.download='library_backup.json';
+  a.click();
+}
+
+function restore(){
+  let input=document.createElement('input');
+  input.type='file';
+  input.accept='.json';
+  input.onchange=e=>{
+    let f=e.target.files[0],r=new FileReader();
+    r.onload=()=>{
+      try{db=JSON.parse(r.result);save();alert('Backup restored.')}catch{alert('Invalid backup file.')}
+    };
+    r.readAsText(f);
+  };
+  input.click();
+}
+
+function renderAll(){
+  renderBooks();
+  renderStudents();
+  renderLent();
+  renderReturnTab();
+  db.lent.forEach(updateStatus);
+  renderDashboardOverdueTable();
+  
+  document.getElementById('dBooks').textContent=db.books.length;
+  document.getElementById('dCopies').textContent=db.books.length;
+  document.getElementById('dAvail').textContent=db.books.length-db.lent.filter(x=>x.status!=='Returned').length;
+  document.getElementById('dLent').textContent=db.lent.filter(x=>x.status!=='Returned').length;
+  document.getElementById('dOverdue').textContent=db.lent.filter(x=>x.status==='Overdue').length;
+}
+
+initFinancialYear();
+document.getElementById('issue').value=new Date().toISOString().slice(0,10);
+</script>
+</body>
+</html>
