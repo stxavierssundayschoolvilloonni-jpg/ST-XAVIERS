@@ -120,13 +120,15 @@ th{background:#eaf1f8;font-weight:bold} .actions{display:flex;gap:6px}.small{fon
   <div class="small" style="color:#dbeafe">Cloud Synced & Online</div>
 </header>
 <nav>
-<button onclick="showTab('dashboard')">Dashboard</button>
-<button onclick="showTab('lent')">Book Issue</button>
-<button onclick="showTab('returnTab')">Book Return</button>
-<button onclick="showTab('students')">Students</button>
-<button onclick="showTab('books')">Book Entry</button>
-<button class="secondary" onclick="backup()">Backup JSON</button>
-<button class="secondary" onclick="restore()">Restore JSON</button>
+  <button onclick="showTab('dashboard')">Dashboard</button>
+  <button onclick="showTab('lent')">Book Issue</button>
+  <button onclick="showTab('returnTab')">Book Return</button>
+  <button onclick="showTab('students')">Students</button>
+  <button onclick="showTab('books')">Book Entry</button>
+  <button class="secondary" onclick="backup()">Backup JSON</button>
+  <button class="secondary" onclick="restore()">Restore JSON</button>
+  <!-- Add Logout Button Here -->
+  <button class="danger" onclick="handleLogout()">Logout</button>
 </nav>
 
 <div class="container">
@@ -372,7 +374,17 @@ function handleLogin(e) {
       alert("Login Failed: " + error.message);
     });
 }
-
+// Handle User Logout
+function handleLogout() {
+  auth.signOut().then(() => {
+    // When signed out successfully, Firebase's auth.onAuthStateChanged 
+    // will automatically show the #authScreen login overlay again.
+    alert("You have been successfully logged out.");
+  }).catch((error) => {
+    console.error("Logout Error: ", error);
+  });
+}
+  
 // Monitor User Authentication State
 auth.onAuthStateChanged(user => {
   if (user) {
