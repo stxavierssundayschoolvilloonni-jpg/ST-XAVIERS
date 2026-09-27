@@ -277,13 +277,13 @@ function handleLogin(e) {
 auth.onAuthStateChanged(user => {
   if (user) {
     document.getElementById('authScreen').style.display = 'none';
-    loadCloudData(); // Fetch live data from online database
+    loadCloudData();
   } else {
     document.getElementById('authScreen').style.display = 'flex';
   }
 });
 
-// Save Data to Cloud Firestore instead of LocalStorage
+// Save Data to Cloud Firestore
 function save() {
   dbCloud.collection("libraryData").doc("mainStore").set(db)
     .then(() => {
@@ -301,7 +301,7 @@ function loadCloudData() {
       if (doc.exists) {
         db = doc.data();
       } else {
-        save(); // Initialize database if empty
+        save();
       }
       renderAll();
     })
@@ -314,7 +314,7 @@ function initFinancialYear() {
   let now = new Date();
   let y = now.getFullYear();
   let m = now.getMonth();
-  let fyearStr = m >= 3 ? `${y}-${y+1}` : `${y-1}-${y}`;
+  let fyearStr = m >= 3 ? y + "-" + (y+1) : (y-1) + "-" + y;
   let fyearInput = document.getElementById('fyear');
   if(fyearInput && !fyearInput.value) {
     fyearInput.value = fyearStr;
@@ -437,12 +437,8 @@ function editStudent(id) {
 }
 
 function openPromoteModal() {
-  document.getElementById('modalTitle').textContent = `Promote Students to Next Class`;
-  let html = `
-    <p>This will advance all students to their next consecutive class level (e.g., Class 1 becomes II, Class II becomes III, etc.). Class XII students will be marked as Graduated.</p>
-    <br>
-    <button type="button" onclick="executePromotion()">Confirm & Promote All Students</button>
-  `;
+  document.getElementById('modalTitle').textContent = "Promote Students to Next Class";
+  let html = `<p>This will advance all students to their next consecutive class level. Class XII students will be marked as Graduated.</p><br><button type="button" onclick="executePromotion()">Confirm & Promote All Students</button>`;
   document.getElementById('modalBody').innerHTML = html;
   document.getElementById('detailModal').classList.add('active');
 }
@@ -462,11 +458,11 @@ function executePromotion() {
 function updateDatalists() {
   let sList = document.getElementById('studentNamesList');
   if(sList) {
-    sList.innerHTML = db.students.map(s => `<option value="${s.name}">`).join('');
+    sList.innerHTML = db.students.map(s => '<option value="' + s.name + '">').join('');
   }
   let bList = document.getElementById('bookIdsList');
   if(bList) {
-    bList.innerHTML = db.books.map(b => `<option value="${b.id}">`).join('');
+    bList.innerHTML = db.books.map(b => '<option value="' + b.id + '">').join('');
   }
 }
 
@@ -540,10 +536,9 @@ function returnBook(dbIndex){
 }
 
 function clearLentRecords() {
-  if(confirm('Are you sure you want to clear all book issue records? This action cannot be undone.')) {
+  if(confirm('Are you sure you want to clear all book issue records?')) {
     db.lent = [];
     save();
-    alert('All book issue records have been successfully cleared.');
   }
 }
 
@@ -571,35 +566,18 @@ function getOverdueDays(dueDate) {
 function openOverdueModal() {
   db.lent.forEach(updateStatus);
   let overdueRecords = db.lent.filter(x => x.status === 'Overdue');
-  
-  document.getElementById('modalTitle').textContent = `Overdue Books Report (${overdueRecords.length})`;
-  
-  let html = `<h4>Currently Overdue Books & Students</h4>`;
-
+  document.getElementById('modalTitle').textContent = "Overdue Books Report (" + overdueRecords.length + ")";
+  let html = "<h4>Currently Overdue Books & Students</h4>";
   if(overdueRecords.length === 0) {
-    html += `<p class="small">No overdue books right now![cite: 1]</p>`;
+    html += '<p class="small">No overdue books right now.</p>';
   } else {
-    html += `
-      <div class="table-wrap"><table>
-        <thead><tr><th>Sl No.</th><th>Academic Year</th><th>Student Name</th><th>Class / Div</th><th>Book Title</th><th>Due Date</th><th>Days Overdue</th></tr></thead>
-        <tbody>
-          ${overdueRecords.map((r, idx) => {
-            let days = getOverdueDays(r.due);
-            return `<tr>
-              <td>${idx + 1}</td>
-              <td>${r.fyear || '-'}</td>
-              <td>${r.studentName}</td>
-              <td>${r.studentClass \vert{}\vert{} '-'} /${r.studentDivision || '-'}</td>
-              <td>${r.bookTitle}<br><span class="small">${r.bookId}</span></td>
-              <td>${r.due}</td>
-              <td><span class="status overdue">${days} day(s) overdue</span></td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table></div>
-    `;
+    html += '<div class="table-wrap"><table><thead><tr><th>Sl No.</th><th>Academic Year</th><th>Student Name</th><th>Class / Div</th><th>Book Title</th><th>Due Date</th><th>Days Overdue</th></tr></thead><tbody>';
+    html += overdueRecords.map((r, idx) => {
+      let days = getOverdueDays(r.due);
+      return '<tr><td>' + (idx + 1) + '</td><td>' + (r.fyear || '-') + '</td><td>' + r.studentName + '</td><td>' + (r.studentClass || '-') + ' / ' + (r.studentDivision || '-') + '</td><td>' + r.bookTitle + '<br><span class="small">' + r.bookId + '</span></td><td>' + r.due + '</td><td><span class="status overdue">' + days + ' day(s) overdue</span></td></tr>';
+    }).join('');
+    html += '</tbody></table></div>';
   }
-
   document.getElementById('modalBody').innerHTML = html;
   document.getElementById('detailModal').classList.add('active');
 }
@@ -607,48 +585,21 @@ function openOverdueModal() {
 function openStudentDetails(studentId) {
   let student = db.students.find(s => s.id === studentId);
   if(!student) return;
-  
   let records = db.lent.filter(x => x.studentId === studentId);
-  let totalLent = records.length;
-  let returnedCount = records.filter(x => x.status === 'Returned').length;
-  let activeCount = totalLent - returnedCount;
-
-  document.getElementById('modalTitle').textContent = `Student Details: ${student.name} (${student.id})`;
-  
-  let html = `
-    <p><strong>Class:</strong> ${student.sclass || '-'} | <strong>Division:</strong> ${student.sdiv || '-'} | <strong>Phone:</strong> ${student.phone || '-'}</p>
-    <p><strong>Total Books Borrowed:</strong> ${totalLent} | <span class="status returned">Returned: ${returnedCount}</span> | <span class="status overdue">Active: ${activeCount}</span></p>
-    <h4>Lending History</h4>
-  `;
-
+  document.getElementById('modalTitle').textContent = "Student Details: " + student.name + " (" + student.id + ")";
+  let html = '<p><strong>Class:</strong> ' + (student.sclass || '-') + ' | <strong>Division:</strong> ' + (student.sdiv || '-') + ' | <strong>Phone:</strong> ' + (student.phone || '-') + '</p>';
+  html += '<h4>Lending History</h4>';
   if(records.length === 0) {
-    html += `<p class="small">No borrowing history for this student.</p>`;
+    html += '<p class="small">No borrowing history for this student.</p>';
   } else {
-    html += `
-      <div class="table-wrap"><table>
-        <thead><tr><th>Sl No.</th><th>Academic Year</th><th>Book Name</th><th>Book ID</th><th>Issue Date</th><th>Due Date</th><th>Return Date</th><th>Status</th></tr></thead>
-        <tbody>
-          ${records.map((r, idx) => {
-            let statusText = r.status;
-            if(r.status === 'Overdue') {
-              statusText = `Overdue (${getOverdueDays(r.due)} days late)`;
-            }
-            return `<tr>
-              <td>${idx + 1}</td>
-              <td>${r.fyear || '-'}</td>
-              <td>${r.bookTitle}</td>
-              <td>${r.bookId}</td>
-              <td>${r.issue}</td>
-              <td>${r.due}</td>
-              <td>${r.returnDate || '-'}</td>
-              <td class="status ${r.status==='Overdue'?'overdue':r.status==='Returned'?'returned':''}">${statusText}</td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table></div>
-    `;
+    html += '<div class="table-wrap"><table><thead><tr><th>Sl No.</th><th>Academic Year</th><th>Book Name</th><th>Book ID</th><th>Issue Date</th><th>Due Date</th><th>Return Date</th><th>Status</th></tr></thead><tbody>';
+    html += records.map((r, idx) => {
+      let statusText = r.status;
+      if(r.status === 'Overdue') { statusText = 'Overdue (' + getOverdueDays(r.due) + ' days late)'; }
+      return '<tr><td>' + (idx + 1) + '</td><td>' + (r.fyear || '-') + '</td><td>' + r.bookTitle + '</td><td>' + r.bookId + '</td><td>' + r.issue + '</td><td>' + r.due + '</td><td>' + (r.returnDate || '-') + '</td><td class="status ' + (r.status==='Overdue'?'overdue':r.status==='Returned'?'returned':'') + '">' + statusText + '</td></tr>';
+    }).join('');
+    html += '</tbody></table></div>';
   }
-
   document.getElementById('modalBody').innerHTML = html;
   document.getElementById('detailModal').classList.add('active');
 }
@@ -656,47 +607,21 @@ function openStudentDetails(studentId) {
 function openBookDetails(bookId) {
   let book = db.books.find(b => b.id === bookId);
   if(!book) return;
-
   let records = db.lent.filter(x => x.bookId === bookId);
-  let totalLent = records.length;
-  let activeLent = records.filter(x => x.status !== 'Returned').length;
-
-  document.getElementById('modalTitle').textContent = `Book Details: ${book.title} (ID: ${book.id})`;
-
-  let html = `
-    <p><strong>Author:</strong> ${book.author || '-'} | <strong>Publisher:</strong> ${book.publisher || '-'} | <strong>Shelf:</strong> ${book.shelf || '-'}</p>
-    <p><strong>Total Times Issued:</strong> ${totalLent} | <span class="status overdue">Currently Lent Out: ${activeLent}</span></p>
-    <h4>Student Borrowing History</h4>
-  `;
-
+  document.getElementById('modalTitle').textContent = "Book Details: " + book.title + " (ID: " + book.id + ")";
+  let html = '<p><strong>Author:</strong> ' + (book.author || '-') + ' | <strong>Publisher:</strong> ' + (book.publisher || '-') + ' | <strong>Shelf:</strong> ' + (book.shelf || '-') + '</p>';
+  html += '<h4>Student Borrowing History</h4>';
   if(records.length === 0) {
-    html += `<p class="small">No borrowing history for this book yet.</p>`;
+    html += '<p class="small">No borrowing history for this book yet.</p>';
   } else {
-    html += `
-      <div class="table-wrap"><table>
-        <thead><tr><th>Sl No.</th><th>Academic Year</th><th>Student Name</th><th>Class / Div</th><th>Issue Date</th><th>Due Date</th><th>Return Date</th><th>Status</th></tr></thead>
-        <tbody>
-          ${records.map((r, idx) => {
-            let statusText = r.status;
-            if(r.status === 'Overdue') {
-              statusText = `Overdue (${getOverdueDays(r.due)} days late)`;
-            }
-            return `<tr>
-              <td>${idx + 1}</td>
-              <td>${r.fyear || '-'}</td>
-              <td>${r.studentName}</td>
-              <td>${r.studentClass \vert{}\vert{} '-'} /${r.studentDivision || '-'}</td>
-              <td>${r.issue}</td>
-              <td>${r.due}</td>
-              <td>${r.returnDate || '-'}</td>
-              <td class="status ${r.status==='Overdue'?'overdue':r.status==='Returned'?'returned':''}">${statusText}</td>
-            </tr>`;
-          }).join('')}
-        </tbody>
-      </table></div>
-    `;
+    html += '<div class="table-wrap"><table><thead><tr><th>Sl No.</th><th>Academic Year</th><th>Student Name</th><th>Class / Div</th><th>Issue Date</th><th>Due Date</th><th>Return Date</th><th>Status</th></tr></thead><tbody>';
+    html += records.map((r, idx) => {
+      let statusText = r.status;
+      if(r.status === 'Overdue') { statusText = 'Overdue (' + getOverdueDays(r.due) + ' days late)'; }
+      return '<tr><td>' + (idx + 1) + '</td><td>' + (r.fyear || '-') + '</td><td>' + r.studentName + '</td><td>' + (r.studentClass || '-') + ' / ' + (r.studentDivision || '-') + '</td><td>' + r.issue + '</td><td>' + r.due + '</td><td>' + (r.returnDate || '-') + '</td><td class="status ' + (r.status==='Overdue'?'overdue':r.status==='Returned'?'returned':'') + '">' + statusText + '</td></tr>';
+    }).join('');
+    html += '</tbody></table></div>';
   }
-
   document.getElementById('modalBody').innerHTML = html;
   document.getElementById('detailModal').classList.add('active');
 }
@@ -710,40 +635,18 @@ function renderBooks(){
   document.getElementById('bookRows').innerHTML=db.books.map((b,i)=>{
     let rowText = (b.id + ' ' + b.title + ' ' + b.author + ' ' + b.shelf).toLowerCase();
     if(!rowText.includes(q)) return '';
-    return `<tr>
-      <td>${b.id}</td>
-      <td>${b.title}</td>
-      <td>${b.author || '-'}</td>
-      <td>${b.shelf || '-'}</td>
-      <td class="actions">
-        <button type="button" onclick="openBookDetails('${b.id}')">Details</button>
-        <button type="button" class="secondary" onclick="editBook('${b.id}')">Edit</button>
-        <button type="button" class="danger" onclick="delBook(${i})">Delete</button>
-      </td>
-    </tr>`;
+    return '<tr><td>' + b.id + '</td><td>' + b.title + '</td><td>' + (b.author || '-') + '</td><td>' + (b.shelf || '-') + '</td><td class="actions"><button type="button" onclick="openBookDetails(\'' + b.id + '\')">Details</button><button type="button" class="secondary" onclick="editBook(\'' + b.id + '\')">Edit</button><button type="button" class="danger" onclick="delBook(' + i + ')">Delete</button></td></tr>';
   }).join('');
 }
 
 function renderStudents(){
   let q = (document.getElementById('studentSearch').value || '').toLowerCase();
   let selectedClass = document.getElementById('classFilter').value;
-
   document.getElementById('studentRows').innerHTML = db.students.map((s, i) => {
     let rowText = (s.id + ' ' + s.name + ' ' + s.sclass + ' ' + s.sdiv + ' ' + s.phone).toLowerCase();
     if(q && !rowText.includes(q)) return '';
     if(selectedClass && s.sclass !== selectedClass) return '';
-
-    return `<tr>
-      <td>${s.id}</td>
-      <td>${s.name}</td>
-      <td>Class: ${s.sclass||'-'} | Div: ${s.sdiv||'-'}</td>
-      <td>${s.phone || '-'}</td>
-      <td class="actions">
-        <button type="button" onclick="openStudentDetails('${s.id}')">Details</button>
-        <button type="button" class="secondary" onclick="editStudent('${s.id}')">Edit</button>
-        <button type="button" class="danger" onclick="delStudent(${i})">Delete</button>
-      </td>
-    </tr>`;
+    return '<tr><td>' + s.id + '</td><td>' + s.name + '</td><td>Class: ' + (s.sclass||'-') + ' | Div: ' + (s.sdiv||'-') + '</td><td>' + (s.phone || '-') + '</td><td class="actions"><button type="button" onclick="openStudentDetails(\'' + s.id + '\')">Details</button><button type="button" class="secondary" onclick="editStudent(\'' + s.id + '\')">Edit</button><button type="button" class="danger" onclick="delStudent(' + i + ')">Delete</button></td></tr>';
   }).join('');
 }
 
@@ -756,21 +659,8 @@ function renderLent(){
     let rowText = JSON.stringify(x).toLowerCase();
     if(!rowText.includes(q)) return '';
     let displayStatus = x.status;
-    if(x.status === 'Overdue') {
-      displayStatus = `Overdue (${getOverdueDays(x.due)} days)`;
-    }
-    return `<tr>
-      <td>${slNo++}</td>
-      <td>${x.fyear || '-'}</td>
-      <td>${x.studentName}</td>
-      <td>${x.studentId}</td>
-      <td>${x.studentClass || '-'} / ${x.studentDivision || '-'}</td>
-      <td>${x.bookTitle}<br><span class="small">${x.bookId}</span></td>
-      <td>${x.issue}</td>
-      <td>${x.due}</td>
-      <td>${x.returnDate || '-'}</td>
-      <td class="status ${x.status==='Overdue'?'overdue':x.status==='Returned'?'returned':''}">${displayStatus}</td>
-    </tr>`;
+    if(x.status === 'Overdue') { displayStatus = 'Overdue (' + getOverdueDays(x.due) + ' days)'; }
+    return '<tr><td>' + (slNo++) + '</td><td>' + (x.fyear || '-') + '</td><td>' + x.studentName + '</td><td>' + x.studentId + '</td><td>' + (x.studentClass || '-') + ' / ' + (x.studentDivision || '-') + '</td><td>' + x.bookTitle + '<br><span class="small">' + x.bookId + '</span></td><td>' + x.issue + '</td><td>' + x.due + '</td><td>' + (x.returnDate || '-') + '</td><td class="status ' + (x.status==='Overdue'?'overdue':x.status==='Returned'?'returned':'') + '">' + displayStatus + '</td></tr>';
   }).join('');
 }
 
@@ -778,27 +668,13 @@ function renderReturnTab(){
   db.lent.forEach(updateStatus);
   let q=(document.getElementById('returnSearch').value||'').toLowerCase();
   let activeLentRecords = db.lent.map((item, originalIndex) => ({item, originalIndex})).filter(obj => obj.item.status !== 'Returned');
-  
   let slNo = 1;
   document.getElementById('returnRows').innerHTML = activeLentRecords.map(({item: x, originalIndex: i})=>{
     let rowText = JSON.stringify(x).toLowerCase();
     if(!rowText.includes(q)) return '';
     let displayStatus = x.status;
-    if(x.status === 'Overdue') {
-      displayStatus = `Overdue (${getOverdueDays(x.due)} days due)`;
-    }
-    return `<tr>
-      <td>${slNo++}</td>
-      <td>${x.fyear || '-'}</td>
-      <td>${x.studentName}</td>
-      <td>${x.studentId}</td>
-      <td>${x.studentClass || '-'} / ${x.studentDivision || '-'}</td>
-      <td>${x.bookTitle}<br><span class="small">${x.bookId}</span></td>
-      <td>${x.issue}</td>
-      <td>${x.due}</td>
-      <td class="status ${x.status==='Overdue'?'overdue':''}">${displayStatus}</td>
-      <td><button type="button" onclick="returnBook(${i})">Return Book</button></td>
-    </tr>`;
+    if(x.status === 'Overdue') { displayStatus = 'Overdue (' + getOverdueDays(x.due) + ' days due)'; }
+    return '<tr><td>' + (slNo++) + '</td><td>' + (x.fyear || '-') + '</td><td>' + x.studentName + '</td><td>' + x.studentId + '</td><td>' + (x.studentClass || '-') + ' / ' + (x.studentDivision || '-') + '</td><td>' + x.bookTitle + '<br><span class="small">' + x.bookId + '</span></td><td>' + x.issue + '</td><td>' + x.due + '</td><td class="status ' + (x.status==='Overdue'?'overdue':'') + '">' + displayStatus + '</td><td><button type="button" onclick="returnBook(' + i + ')">Return Book</button></td></tr>';
   }).join('');
 }
 
@@ -806,110 +682,15 @@ function renderDashboardOverdueTable() {
   db.lent.forEach(updateStatus);
   let overdueRecords = db.lent.filter(x => x.status === 'Overdue');
   let tbody = document.getElementById('dashboardOverdueRows');
-  
   if(overdueRecords.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="small">No overdue items right now.[cite: 1]</td></tr>`;
+    tbody.innerHTML = '<tr><td colspan="7" class="small">No overdue items right now.</td></tr>';
     return;
   }
-
   let slNo = 1;
   tbody.innerHTML = overdueRecords.map(r => {
     let days = getOverdueDays(r.due);
-    return `<tr>
-      <td>${slNo++}</td>
-      <td>${r.fyear || '-'}</td>
-      <td>${r.studentName}</td>
-      <td>${r.studentClass || '-'} / ${r.studentDivision || '-'}</td>
-      <td>${r.bookTitle} <span class="small">(${r.bookId})</span></td>
-      <td>${r.due}</td>
-      <td><span class="status overdue">${days} day(s) overdue</span></td>
-    </tr>`;
+    return '<tr><td>' + (slNo++) + '</td><td>' + (r.fyear || '-') + '</td><td>' + r.studentName + '</td><td>' + (r.studentClass || '-') + ' / ' + (r.studentDivision || '-') + '</td><td>' + r.bookTitle + ' <span class="small">(' + r.bookId + ')</span></td><td>' + r.due + '</td><td><span class="status overdue">' + days + ' day(s) overdue</span></td></tr>';
   }).join('');
-}
-
-function downloadCSV(filename, csvContent) {
-  let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  let url = URL.createObjectURL(blob);
-  let a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function exportBooksCSV() {
-  if(db.books.length === 0) { alert('No books available to export.'); return; }
-  let headers = ['Book ID', 'Title', 'Author', 'Publisher', 'Edition', 'Year', 'Shelf', 'Remarks'];
-  let rows = db.books.map(b => [
-    `"${b.id || ''}"`,
-    `"${(b.title || '').replace(/"/g, '""')}"`,
-    `"${(b.author || '').replace(/"/g, '""')}"`,
-    `"${(b.publisher || '').replace(/"/g, '""')}"`,
-    `"${(b.edition || '').replace(/"/g, '""')}"`,
-    `"${b.year || ''}"`,
-    `"${(b.shelf || '').replace(/"/g, '""')}"`,
-    `"${(b.remarks || '').replace(/"/g, '""')}"`
-  ]);
-  let csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-  downloadCSV('books_export.csv', csv);
-}
-
-function exportStudentsCSV() {
-  if(db.students.length === 0) { alert('No students available to export.'); return; }
-  let headers = ['Student ID', 'Student Name', 'Class', 'Division', 'Phone', 'Remarks'];
-  let rows = db.students.map(s => [
-    `"${s.id || ''}"`,
-    `"${(s.name || '').replace(/"/g, '""')}"`,
-    `"${(s.sclass || '').replace(/"/g, '""')}"`,
-    `"${(s.sdiv || '').replace(/"/g, '""')}"`,
-    `"${(s.phone || '').replace(/"/g, '""')}"`,
-    `"${(s.remarks || '').replace(/"/g, '""')}"`
-  ]);
-  let csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-  downloadCSV('students_export.csv', csv);
-}
-
-function exportLentCSV() {
-  if(db.lent.length === 0) { alert('No issue records available to export.'); return; }
-  let headers = ['Sl No.', 'Academic Year', 'Student Name', 'Student ID', 'Class', 'Division', 'Book ID', 'Book Title', 'Issue Date', 'Due Date', 'Return Date', 'Status'];
-  let rows = db.lent.map((x, idx) => [
-    `"${idx + 1}"`,
-    `"${x.fyear || ''}"`,
-    `"${(x.studentName || '').replace(/"/g, '""')}"`,
-    `"${x.studentId || ''}"`,
-    `"${(x.studentClass || '').replace(/"/g, '""')}"`,
-    `"${(x.studentDivision || '').replace(/"/g, '""')}"`,
-    `"${x.bookId || ''}"`,
-    `"${(x.bookTitle || '').replace(/"/g, '""')}"`,
-    `"${x.issue || ''}"`,
-    `"${x.due || ''}"`,
-    `"${x.returnDate || ''}"`,
-    `"${x.status || ''}"`
-  ]);
-  let csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-  downloadCSV('book_issue_records_export.csv', csv);
-}
-
-function exportOverdueCSV() {
-  db.lent.forEach(updateStatus);
-  let overdueRecords = db.lent.filter(x => x.status === 'Overdue');
-  if(overdueRecords.length === 0) { alert('No overdue records available to export.'); return; }
-  let headers = ['Sl No.', 'Academic Year', 'Student Name', 'Student ID', 'Class', 'Division', 'Book ID', 'Book Title', 'Issue Date', 'Due Date', 'Days Overdue'];
-  let rows = overdueRecords.map((r, idx) => [
-    `"${idx + 1}"`,
-    `"${r.fyear || ''}"`,
-    `"${(r.studentName || '').replace(/"/g, '""')}"`,
-    `"${r.studentId || ''}"`,
-    `"${(r.studentClass || '').replace(/"/g, '""')}"`,
-    `"${(r.studentDivision || '').replace(/"/g, '""')}"`,
-    `"${r.bookId || ''}"`,
-    `"${(r.bookTitle || '').replace(/"/g, '""')}"`,
-    `"${r.issue || ''}"`,
-    `"${r.due || ''}"`,
-    `"${getOverdueDays(r.due)}"`
-  ]);
-  let csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-  downloadCSV('overdue_records_export.csv', csv);
 }
 
 function backup(){
