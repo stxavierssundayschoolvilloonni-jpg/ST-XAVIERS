@@ -46,54 +46,20 @@ th{background:#eaf1f8;font-weight:bold} .actions{display:flex;gap:6px}.small{fon
 .modal-header h3 { margin: 0; color: var(--primary); }
 .close-btn { background: #64748b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
 
-/* --- Responsive Mobile View Adjustments --- */
+/* Responsive Mobile View Adjustments */
 @media screen and (max-width: 768px) {
-  header {
-    flex-direction: column;
-    gap: 8px;
-    text-align: center;
-    padding: 12px;
-  }
-  nav {
-    justify-content: center;
-    padding: 8px;
-  }
-  nav button {
-    flex: 1 1 42%;
-    padding: 10px;
-    font-size: 13px;
-  }
-  .container {
-    padding: 10px;
-  }
-  form {
-    padding: 14px;
-  }
-  .grid {
-    grid-template-columns: 1fr; /* Stack form fields vertically on mobile */
-    gap: 10px;
-  }
-  input, select, button[type="submit"], form button {
-    font-size: 16px; /* Prevents auto-zoom on iPhones */
-    padding: 11px;
-  }
-  .cards {
-    grid-template-columns: 1fr 1fr; /* 2 cards side-by-side on mobile dashboard */
-    gap: 10px;
-  }
-  .card .num {
-    font-size: 24px;
-  }
-  table {
-    min-width: 650px; /* Compact table width for mobile swiping */
-  }
-  .actions {
-    flex-direction: column;
-    gap: 4px;
-  }
-  .actions button {
-    width: 100%;
-  }
+  header { flex-direction: column; gap: 8px; text-align: center; padding: 12px; }
+  nav { justify-content: center; padding: 8px; }
+  nav button { flex: 1 1 42%; padding: 10px; font-size: 13px; }
+  .container { padding: 10px; }
+  form { padding: 14px; }
+  .grid { grid-template-columns: 1fr; gap: 10px; }
+  input, select, button[type="submit"], form button { font-size: 16px; padding: 11px; }
+  .cards { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .card .num { font-size: 24px; }
+  table { min-width: 650px; }
+  .actions { flex-direction: column; gap: 4px; }
+  .actions button { width: 100%; }
 }
 </style>
 </head>
@@ -117,18 +83,17 @@ th{background:#eaf1f8;font-weight:bold} .actions{display:flex;gap:6px}.small{fon
 
 <header>
   <h1>📚 Online Library Management System</h1>
-  <div class="small" style="color:#dbeafe">Cloud Synced & Online</div>
+  <div class="small" style="color:#dbeafe">Cloud Synced & Mobile Friendly</div>
 </header>
 <nav>
-  <button onclick="showTab('dashboard')">Dashboard</button>
-  <button onclick="showTab('lent')">Book Issue</button>
-  <button onclick="showTab('returnTab')">Book Return</button>
-  <button onclick="showTab('students')">Students</button>
-  <button onclick="showTab('books')">Book Entry</button>
-  <button class="secondary" onclick="backup()">Backup JSON</button>
-  <button class="secondary" onclick="restore()">Restore JSON</button>
-  <!-- Add Logout Button Here -->
-  <button class="danger" onclick="handleLogout()">Logout</button>
+<button onclick="showTab('dashboard')">Dashboard</button>
+<button onclick="showTab('lent')">Book Issue</button>
+<button onclick="showTab('returnTab')">Book Return</button>
+<button onclick="showTab('students')">Students</button>
+<button onclick="showTab('books')">Book Entry</button>
+<button class="secondary" onclick="backup()">Backup JSON</button>
+<button class="secondary" onclick="restore()">Restore JSON</button>
+<button class="danger" onclick="handleLogout()">Logout</button>
 </nav>
 
 <div class="container">
@@ -313,7 +278,7 @@ let editingStudentId = null;
 
 const romanMap = { "1": "II", "II": "III", "III": "IV", "IV": "V", "V": "VI", "VI": "VII", "VII": "VIII", "VIII": "IX", "IX": "X", "X": "XI", "XI": "XII", "XII": "Graduated" };
 
-// Default Student List Restored
+// Full Student Database (Classes 1 to 12)
 function ensureInitialStudents() {
   if(db.students.length === 0) {
     db.students = [
@@ -358,7 +323,37 @@ function ensureInitialStudents() {
       { id: "3675", name: "Jehiel Mary James Thurutthumalil", sclass: "II", sdiv: "A", phone: "", remarks: "" },
       { id: "3683", name: "Jossina Ann Regi Chriyil", sclass: "II", sdiv: "A", phone: "", remarks: "" },
       { id: "3682", name: "Mariam Rosa Manu Kuzhivelil", sclass: "II", sdiv: "A", phone: "8504066206", remarks: "" },
-      { id: "3684", name: "Vianne Grace Kunnumpuram", sclass: "II", sdiv: "A", phone: "", remarks: "" }
+      { id: "3684", name: "Vianne Grace Kunnumpuram", sclass: "II", sdiv: "A", phone: "", remarks: "" },
+      { id: "3658", name: "Aedan Kurian Felix Perumalil", sclass: "III", sdiv: "B", phone: "", remarks: "" },
+      { id: "3649", name: "Eden Thomas Scaria Kannamkulam", sclass: "III", sdiv: "A", phone: "", remarks: "" },
+      { id: "3648", name: "Georgy Sebastian Mupparakandathil", sclass: "III", sdiv: "A", phone: "", remarks: "" },
+      { id: "3662", name: "Jeremin jose Thuruthumaliyil", sclass: "III", sdiv: "B", phone: "", remarks: "" },
+      { id: "3650", name: "Joseph Mark Chomasseril", sclass: "III", sdiv: "A", phone: "", remarks: "" },
+      { id: "3646", name: "Leon Jins Vellanickal", sclass: "III", sdiv: "A", phone: "", remarks: "" },
+      { id: "3647", name: "Mathew Joby Kochathiparambil", sclass: "III", sdiv: "A", phone: "", remarks: "" },
+      { id: "3659", name: "Roshan Ranju Kalluparambil", sclass: "III", sdiv: "B", phone: "", remarks: "" },
+      { id: "3660", name: "Samuel Saji Puthuparambil", sclass: "III", sdiv: "B", phone: "", remarks: "" },
+      { id: "3637", name: "Aagath Muriankarychirayil", sclass: "IV", sdiv: "B", phone: "", remarks: "" },
+      { id: "3611", name: "Abel Balu Kochuparambil", sclass: "IV", sdiv: "A", phone: "", remarks: "" },
+      { id: "3629", name: "Airon Rijo Velloor", sclass: "IV", sdiv: "B", phone: "", remarks: "" },
+      { id: "3625", name: "Albin Bino Pazhoorakathu", sclass: "IV", sdiv: "B", phone: "", remarks: "" },
+      { id: "3613", name: "Austin Bibin Kattupara", sclass: "IV", sdiv: "A", phone: "", remarks: "" },
+      { id: "3538", name: "Alan Joseph Vellor", sclass: "V", sdiv: "A", phone: "9947027081", remarks: "" },
+      { id: "3539", name: "Anujin Xavier Ereriparambil", sclass: "V", sdiv: "A", phone: "9947027081", remarks: "" },
+      { id: "3583", name: "Absalom Anil Kurian Pongampara", sclass: "VI", sdiv: "A", phone: "9496911982", remarks: "" },
+      { id: "3566", name: "Ajal Santhosh Chackalayil", sclass: "VI", sdiv: "A", phone: "", remarks: "" },
+      { id: "3591", name: "Abel P Sajan Puthuparambil", sclass: "VII", sdiv: "B", phone: "7012672583", remarks: "" },
+      { id: "3490", name: "Antony Soji Marangattu", sclass: "VII", sdiv: "B", phone: "9961923043", remarks: "" },
+      { id: "3464", name: "Aaron Subin Nalukandathil", sclass: "VIII", sdiv: "B", phone: "9995590209", remarks: "" },
+      { id: "3448", name: "Abil Mathew Alilakuzhi Veedu", sclass: "VIII", sdiv: "B", phone: "6238674081", remarks: "" },
+      { id: "3404", name: "Abel Varghese Marangattu", sclass: "IX", sdiv: "B", phone: "", remarks: "" },
+      { id: "3405", name: "Ajwin Antony Thekkumkattil", sclass: "IX", sdiv: "B", phone: "", remarks: "" },
+      { id: "3358", name: "Ajil Roji Kaduvakarichira", sclass: "X", sdiv: "", phone: "", remarks: "" },
+      { id: "3359", name: "Alan K Jojo Kattooppara", sclass: "X", sdiv: "", phone: "", remarks: "" },
+      { id: "3336", name: "Afron Rijo Velloor", sclass: "XI", sdiv: "A", phone: "7012133984", remarks: "" },
+      { id: "3331", name: "Alen Abraham Shibu Kochuparambil", sclass: "XI", sdiv: "A", phone: "9495265597", remarks: "" },
+      { id: "3596", name: "Aaron Bino Pazhoorakathu", sclass: "XII", sdiv: "B", phone: "9446831725", remarks: "" },
+      { id: "3272", name: "Abishek Biju Konnakal", sclass: "XII", sdiv: "B", phone: "9526601583", remarks: "" }
     ];
   }
 }
@@ -374,17 +369,14 @@ function handleLogin(e) {
       alert("Login Failed: " + error.message);
     });
 }
-// Handle User Logout
+
+// Handle Logout
 function handleLogout() {
-  auth.signOut().then(() => {
-    // When signed out successfully, Firebase's auth.onAuthStateChanged 
-    // will automatically show the #authScreen login overlay again.
-    alert("You have been successfully logged out.");
-  }).catch((error) => {
+  auth.signOut().catch((error) => {
     console.error("Logout Error: ", error);
   });
 }
-  
+
 // Monitor User Authentication State
 auth.onAuthStateChanged(user => {
   if (user) {
