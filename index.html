@@ -88,7 +88,7 @@ th{background:#eaf1f8;font-weight:bold} .actions{display:flex;gap:6px}.small{fon
         </tr>
       </thead>
       <tbody id="dashboardOverdueRows">
-        <tr><td colspan="7" class="small">No overdue items.</td></tr>
+        <tr><td colspan="7" class="small">No overdue items[cite: 1].</td></tr>
       </tbody>
     </table>
   </div>
@@ -110,7 +110,7 @@ th{background:#eaf1f8;font-weight:bold} .actions{display:flex;gap:6px}.small{fon
 </div>
 <div>
   <label>Student Name</label>
-  <input id="lsname" list="studentNamesList" oninput="onStudentNameInput()" onchange="onStudentNameInput()" required placeholder="Select student name...">
+  <input id="lsname" list="studentNamesList" oninput="onStudentNameInput()" onchange="onStudentNameInput()" onblur="onStudentNameInput()" required placeholder="Select student name...">
   <datalist id="studentNamesList"></datalist>
 </div>
 <div><label>Student ID<input id="lsid" readonly></label></div>
@@ -118,7 +118,7 @@ th{background:#eaf1f8;font-weight:bold} .actions{display:flex;gap:6px}.small{fon
 <div><label>Division<input id="ldiv" readonly></label></div>
 <div>
   <label>Book ID</label>
-  <input id="lbid" list="bookIdsList" oninput="onBookIdInput()" onchange="onBookIdInput()" required placeholder="Select Book ID...">
+  <input id="lbid" list="bookIdsList" oninput="onBookIdInput()" onchange="onBookIdInput()" onblur="onBookIdInput()" required placeholder="Select Book ID...">
   <datalist id="bookIdsList"></datalist>
 </div>
 <div><label>Book Title<input id="lbtitle" readonly></label></div>
@@ -623,7 +623,7 @@ function openOverdueModal() {
   let html = `<h4>Currently Overdue Books & Students</h4>`;
 
   if(overdueRecords.length === 0) {
-    html += `<p class="small">No overdue books right now![cite: 1]</p>`;
+    html += `<p class="small">No overdue books right now[cite: 1]!</p>`;
   } else {
     html += `
       <div class="table-wrap"><table>
@@ -854,7 +854,7 @@ function renderDashboardOverdueTable() {
   let tbody = document.getElementById('dashboardOverdueRows');
   
   if(overdueRecords.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="small">No overdue items right now.[cite: 1]</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="small">No overdue items right now[cite: 1].</td></tr>`;
     return;
   }
 
