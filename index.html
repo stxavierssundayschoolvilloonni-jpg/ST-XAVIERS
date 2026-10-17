@@ -256,7 +256,10 @@ function showTab(id) {
   }
 }
 
-// Real-Time Cloud Listener with Error Protection
+// Render instantly with default structure so page never hangs
+renderAll();
+
+// Real-Time Cloud Listener
 firestoreDb.collection("librarySystem").doc("mainDatabase").onSnapshot((doc) => {
   try {
     if (doc.exists) {
@@ -572,6 +575,7 @@ function lendBook(e){
   let bid = val('lbid');
   let b = db.books ? db.books.find(x => x.id === bid) : null;
   if(!b){alert('Book ID not found.');return} 
+  if(!db.lent) db.lent = [];
   if(db.lent.filter(x=>x.bookId===bid&&x.status!=='Returned').length>=1){alert('This book is already lent out.');return}
   if(db.lent.some(x=>x.studentId===sid&&x.bookId===bid&&x.status!=='Returned')){alert('This student already has this active book copy issued.');return}
   
@@ -641,6 +645,7 @@ function getOverdueDays(dueDate) {
 }
 
 function openOverdueModal() {
+  if(!db.lent) db.lent = [];
   db.lent.forEach(updateStatus);
   let overdueRecords = db.lent.filter(x => x.status === 'Overdue');
   
@@ -683,6 +688,7 @@ function openStudentDetails(studentId) {
   let student = db.students.find(s => s.id === studentId);
   if(!student) return;
   
+  if(!db.lent) db.lent = [];
   let records = db.lent.filter(x => x.studentId === studentId);
   let totalLent = records.length;
   let returnedCount = records.filter(x => x.status === 'Returned').length;
@@ -735,6 +741,7 @@ function openBookDetails(bookId) {
   let book = db.books.find(b => b.id === bookId);
   if(!book) return;
 
+  if(!db.lent) db.lent = [];
   let records = db.lent.filter(x => x.bookId === bookId);
   let totalLent = records.length;
   let activeLent = records.filter(x => x.status !== 'Returned').length;
