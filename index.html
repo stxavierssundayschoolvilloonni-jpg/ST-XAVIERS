@@ -3,15 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Online Library Management System</title>
-
-<!-- Firebase App (Core) -->
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<!-- Firebase Authentication -->
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-<!-- Firebase Firestore -->
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
+<title>Offline Library Management System</title>
 <style>
 :root{--primary:#1f4e78;--bg:#f4f7fb;--card:#fff;--text:#1f2937;--border:#dbe3ec;--success:#15803d;--danger:#b91c1c}
 *{box-sizing:border-box} body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text)}
@@ -45,45 +37,16 @@ th{background:#eaf1f8;font-weight:bold} .actions{display:flex;gap:6px}.small{fon
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
 .modal-header h3 { margin: 0; color: var(--primary); }
 .close-btn { background: #64748b; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
-
-/* Responsive Mobile View Adjustments */
-@media screen and (max-width: 768px) {
-  header { flex-direction: column; gap: 8px; text-align: center; padding: 12px; }
-  nav { justify-content: center; padding: 8px; }
-  nav button { flex: 1 1 42%; padding: 10px; font-size: 13px; }
-  .container { padding: 10px; }
-  form { padding: 14px; }
-  .grid { grid-template-columns: 1fr; gap: 10px; }
-  input, select, button[type="submit"], form button { font-size: 16px; padding: 11px; }
-  .cards { grid-template-columns: 1fr 1fr; gap: 10px; }
-  .card .num { font-size: 24px; }
-  table { min-width: 650px; }
-  .actions { flex-direction: column; gap: 4px; }
-  .actions button { width: 100%; }
-}
 </style>
+
+<!-- Firebase App & Firestore Compat SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 </head>
 <body>
-
-<!-- Sign-In Screen Overlay -->
-<div id="authScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:var(--bg);display:flex;justify-content:center;align-items:center;z-index:9999;">
-  <form onsubmit="handleLogin(event)" style="width:100%;max-width:350px;background:white;padding:24px;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.1)">
-    <h2 style="margin-top:0;color:var(--primary);">🔐 Library Admin Login</h2>
-    <div style="margin-bottom:12px;">
-      <label>Email</label>
-      <input type="email" id="loginEmail" required placeholder="admin@library.com" style="width:100%;padding:8px;margin-top:4px;">
-    </div>
-    <div style="margin-bottom:16px;">
-      <label>Password</label>
-      <input type="password" id="loginPassword" required placeholder="••••••••" style="width:100%;padding:8px;margin-top:4px;">
-    </div>
-    <button type="submit" style="width:100%;padding:10px;">Sign In</button>
-  </form>
-</div>
-
 <header>
-  <h1>📚 Online Library Management System</h1>
-  <div class="small" style="color:#dbeafe">Cloud Synced & Mobile Friendly</div>
+  <h1>📚 Real-Time Library Management System</h1>
+  <div class="small" style="color:#dbeafe">Cloud Sync Active</div>
 </header>
 <nav>
 <button onclick="showTab('dashboard')">Dashboard</button>
@@ -93,7 +56,6 @@ th{background:#eaf1f8;font-weight:bold} .actions{display:flex;gap:6px}.small{fon
 <button onclick="showTab('books')">Book Entry</button>
 <button class="secondary" onclick="backup()">Backup JSON</button>
 <button class="secondary" onclick="restore()">Restore JSON</button>
-<button class="danger" onclick="handleLogout()">Logout</button>
 </nav>
 
 <div class="container">
@@ -126,7 +88,7 @@ th{background:#eaf1f8;font-weight:bold} .actions{display:flex;gap:6px}.small{fon
         </tr>
       </thead>
       <tbody id="dashboardOverdueRows">
-        <tr><td colspan="7" class="small">No overdue items.[cite: 1]</td></tr>
+        <tr><td colspan="7" class="small">No overdue items[cite: 1].</td></tr>
       </tbody>
     </table>
   </div>
@@ -148,7 +110,7 @@ th{background:#eaf1f8;font-weight:bold} .actions{display:flex;gap:6px}.small{fon
 </div>
 <div>
   <label>Student Name</label>
-  <input id="lsname" list="studentNamesList" oninput="onStudentNameInput()" required placeholder="Select student name...">
+  <input id="lsname" list="studentNamesList" oninput="onStudentNameInput()" onchange="onStudentNameInput()" onblur="onStudentNameInput()" required placeholder="Select student name...">
   <datalist id="studentNamesList"></datalist>
 </div>
 <div><label>Student ID<input id="lsid" readonly></label></div>
@@ -156,7 +118,7 @@ th{background:#eaf1f8;font-weight:bold} .actions{display:flex;gap:6px}.small{fon
 <div><label>Division<input id="ldiv" readonly></label></div>
 <div>
   <label>Book ID</label>
-  <input id="lbid" list="bookIdsList" oninput="onBookIdInput()" required placeholder="Select Book ID...">
+  <input id="lbid" list="bookIdsList" oninput="onBookIdInput()" onchange="onBookIdInput()" onblur="onBookIdInput()" required placeholder="Select Book ID...">
   <datalist id="bookIdsList"></datalist>
 </div>
 <div><label>Book Title<input id="lbtitle" readonly></label></div>
@@ -182,6 +144,9 @@ th{background:#eaf1f8;font-weight:bold} .actions{display:flex;gap:6px}.small{fon
   <div style="display:flex; gap:8px;">
     <button onclick="openPromoteModal()" style="background:var(--success)">Promote Classes</button>
     <button class="secondary" onclick="exportStudentsCSV()">Export Students CSV</button>
+    <label class="secondary" style="padding:9px 14px; border-radius:6px; cursor:pointer; color:#fff; font-weight:600; font-size:13px; margin:0;">
+      Import Students <input type="file" id="importStudentsFile" accept=".json,.csv" style="display:none" onchange="importStudentsData(event)">
+    </label>
   </div>
 </div>
 <form id="studentForm" onsubmit="addStudent(event)"><div class="grid">
@@ -267,10 +232,11 @@ const firebaseConfig = {
   measurementId: "G-3CN5HKJXDX"
 };
 
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const dbCloud = firebase.firestore();
+// Initialize Firebase safely
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+const firestoreDb = firebase.firestore();
 
 let db = { books: [], students: [], lent: [] };
 let editingBookId = null;
@@ -278,160 +244,61 @@ let editingStudentId = null;
 
 const romanMap = { "1": "II", "II": "III", "III": "IV", "IV": "V", "V": "VI", "VI": "VII", "VII": "VIII", "VIII": "IX", "IX": "X", "X": "XI", "XI": "XII", "XII": "Graduated" };
 
-// Full Student Database (Classes 1 to 12)
-function ensureInitialStudents() {
-  if(db.students.length === 0) {
-    db.students = [
-      { id: "3709", name: "Adam Thomas Sonu Porunnakottu", sclass: "1", sdiv: "A", phone: "9544051586", remarks: "" },
-      { id: "3714", name: "Adam Xavier Manoj Punnavely", sclass: "1", sdiv: "A", phone: "9497393001", remarks: "" },
-      { id: "3728", name: "Cristiano Bibin Kattuppara", sclass: "1", sdiv: "A", phone: "9207574629", remarks: "" },
-      { id: "3718", name: "Deon David Shijo Arimattathil", sclass: "1", sdiv: "A", phone: "8714331020", remarks: "" },
-      { id: "3713", name: "Eljo George Vattakottayil", sclass: "1", sdiv: "A", phone: "9747123441", remarks: "" },
-      { id: "3717", name: "Iwan Shibu Velloor", sclass: "1", sdiv: "A", phone: "8606242521", remarks: "" },
-      { id: "3729", name: "Joseph Mathew Bibin Murickal", sclass: "1", sdiv: "A", phone: "9847229288", remarks: "" },
-      { id: "3726", name: "Joshua Paul Rince Muttathumalil", sclass: "1", sdiv: "A", phone: "9207313369", remarks: "" },
-      { id: "3708", name: "Joshua Tijo Paikattu", sclass: "1", sdiv: "A", phone: "7507056758", remarks: "" },
-      { id: "3723", name: "Steev Luke Jintu Manathara", sclass: "1", sdiv: "A", phone: "8113863602", remarks: "" },
-      { id: "3730", name: "Tony Jose Velloor", sclass: "1", sdiv: "A", phone: "", remarks: "" },
-      { id: "3722", name: "Aiby S V Vellanickal", sclass: "1", sdiv: "A", phone: "9656160285", remarks: "" },
-      { id: "3721", name: "Ameesha Ajeesh Parekandam", sclass: "1", sdiv: "A", phone: "9544843833", remarks: "" },
-      { id: "3707", name: "Anciya Mary Jomon Pukadiparambil", sclass: "1", sdiv: "A", phone: "9037613467", remarks: "" },
-      { id: "3711", name: "Angelina Rince Pathickal", sclass: "1", sdiv: "A", phone: "9605931819", remarks: "" },
-      { id: "3725", name: "Elana Anil Karuthedathu", sclass: "1", sdiv: "A", phone: "9544137084", remarks: "" },
-      { id: "3732", name: "Evana Maria Joseph Kainikkara", sclass: "1", sdiv: "A", phone: "9961553820", remarks: "" },
-      { id: "3710", name: "Isabel Thressia Felix Perumalil", sclass: "1", sdiv: "A", phone: "7559089136", remarks: "" },
-      { id: "3716", name: "Joscelin Maria Denny Chellamcott", sclass: "1", sdiv: "A", phone: "9544547280", remarks: "" },
-      { id: "3712", name: "Julia Anne Jintu Kizhakkechirayil", sclass: "1", sdiv: "A", phone: "7025562105", remarks: "" },
-      { id: "3719", name: "Mariam Joseph Poovathinkal", sclass: "1", sdiv: "A", phone: "9387632224", remarks: "" },
-      { id: "3715", name: "Min Elza Biju Velloor", sclass: "1", sdiv: "A", phone: "9895246848", remarks: "" },
-      { id: "3724", name: "Nathania Elsa Bibin Vazhakalayil", sclass: "1", sdiv: "A", phone: "9037330506", remarks: "" },
-      { id: "3727", name: "Rose Ann Abhijith Chomacheril", sclass: "1", sdiv: "A", phone: "9605098008", remarks: "" },
-      { id: "3731", name: "Sana Anna Stalin Thottiparambil", sclass: "1", sdiv: "A", phone: "", remarks: "" },
-      { id: "3720", name: "Serah Mariam Sebastian Kandathil", sclass: "1", sdiv: "A", phone: "9496385763", remarks: "" },
-      { id: "3699", name: "Emmanuvel Shinu Myladoorparambil", sclass: "II", sdiv: "A", phone: "9744940319", remarks: "" },
-      { id: "3677", name: "Jaiden Joby Nedumkallel", sclass: "II", sdiv: "A", phone: "", remarks: "" },
-      { id: "3706", name: "Jerin Joby Vattakottayil", sclass: "II", sdiv: "A", phone: "9526732854", remarks: "" },
-      { id: "3673", name: "Joel Thomas Paikkattu", sclass: "II", sdiv: "A", phone: "", remarks: "" },
-      { id: "3680", name: "Joshua MJ Mangalathil", sclass: "II", sdiv: "A", phone: "", remarks: "" },
-      { id: "3676", name: "Meric Tom Jikku Puthookariyil", sclass: "II", sdiv: "A", phone: "", remarks: "" },
-      { id: "3672", name: "Prayan Robins Ellichira", sclass: "II", sdiv: "A", phone: "9497086387", remarks: "" },
-      { id: "3674", name: "Ron Varghese Naickan Parambil", sclass: "II", sdiv: "A", phone: "", remarks: "" },
-      { id: "3700", name: "Evangelin Shinu Myladoorparambil", sclass: "II", sdiv: "A", phone: "", remarks: "" },
-      { id: "3678", name: "Hannah Rose Ajeesh Porunnakottu", sclass: "II", sdiv: "A", phone: "", remarks: "" },
-      { id: "3681", name: "Irin Mariya Prince Chfllakuttysheri", sclass: "II", sdiv: "A", phone: "", remarks: "" },
-      { id: "3679", name: "Jaidan Jyothis Mathew Kattupara", sclass: "II", sdiv: "A", phone: "", remarks: "" },
-      { id: "3675", name: "Jehiel Mary James Thurutthumalil", sclass: "II", sdiv: "A", phone: "", remarks: "" },
-      { id: "3683", name: "Jossina Ann Regi Chriyil", sclass: "II", sdiv: "A", phone: "", remarks: "" },
-      { id: "3682", name: "Mariam Rosa Manu Kuzhivelil", sclass: "II", sdiv: "A", phone: "8504066206", remarks: "" },
-      { id: "3684", name: "Vianne Grace Kunnumpuram", sclass: "II", sdiv: "A", phone: "", remarks: "" },
-      { id: "3658", name: "Aedan Kurian Felix Perumalil", sclass: "III", sdiv: "B", phone: "", remarks: "" },
-      { id: "3649", name: "Eden Thomas Scaria Kannamkulam", sclass: "III", sdiv: "A", phone: "", remarks: "" },
-      { id: "3648", name: "Georgy Sebastian Mupparakandathil", sclass: "III", sdiv: "A", phone: "", remarks: "" },
-      { id: "3662", name: "Jeremin jose Thuruthumaliyil", sclass: "III", sdiv: "B", phone: "", remarks: "" },
-      { id: "3650", name: "Joseph Mark Chomasseril", sclass: "III", sdiv: "A", phone: "", remarks: "" },
-      { id: "3646", name: "Leon Jins Vellanickal", sclass: "III", sdiv: "A", phone: "", remarks: "" },
-      { id: "3647", name: "Mathew Joby Kochathiparambil", sclass: "III", sdiv: "A", phone: "", remarks: "" },
-      { id: "3659", name: "Roshan Ranju Kalluparambil", sclass: "III", sdiv: "B", phone: "", remarks: "" },
-      { id: "3660", name: "Samuel Saji Puthuparambil", sclass: "III", sdiv: "B", phone: "", remarks: "" },
-      { id: "3637", name: "Aagath Muriankarychirayil", sclass: "IV", sdiv: "B", phone: "", remarks: "" },
-      { id: "3611", name: "Abel Balu Kochuparambil", sclass: "IV", sdiv: "A", phone: "", remarks: "" },
-      { id: "3629", name: "Airon Rijo Velloor", sclass: "IV", sdiv: "B", phone: "", remarks: "" },
-      { id: "3625", name: "Albin Bino Pazhoorakathu", sclass: "IV", sdiv: "B", phone: "", remarks: "" },
-      { id: "3613", name: "Austin Bibin Kattupara", sclass: "IV", sdiv: "A", phone: "", remarks: "" },
-      { id: "3538", name: "Alan Joseph Vellor", sclass: "V", sdiv: "A", phone: "9947027081", remarks: "" },
-      { id: "3539", name: "Anujin Xavier Ereriparambil", sclass: "V", sdiv: "A", phone: "9947027081", remarks: "" },
-      { id: "3583", name: "Absalom Anil Kurian Pongampara", sclass: "VI", sdiv: "A", phone: "9496911982", remarks: "" },
-      { id: "3566", name: "Ajal Santhosh Chackalayil", sclass: "VI", sdiv: "A", phone: "", remarks: "" },
-      { id: "3591", name: "Abel P Sajan Puthuparambil", sclass: "VII", sdiv: "B", phone: "7012672583", remarks: "" },
-      { id: "3490", name: "Antony Soji Marangattu", sclass: "VII", sdiv: "B", phone: "9961923043", remarks: "" },
-      { id: "3464", name: "Aaron Subin Nalukandathil", sclass: "VIII", sdiv: "B", phone: "9995590209", remarks: "" },
-      { id: "3448", name: "Abil Mathew Alilakuzhi Veedu", sclass: "VIII", sdiv: "B", phone: "6238674081", remarks: "" },
-      { id: "3404", name: "Abel Varghese Marangattu", sclass: "IX", sdiv: "B", phone: "", remarks: "" },
-      { id: "3405", name: "Ajwin Antony Thekkumkattil", sclass: "IX", sdiv: "B", phone: "", remarks: "" },
-      { id: "3358", name: "Ajil Roji Kaduvakarichira", sclass: "X", sdiv: "", phone: "", remarks: "" },
-      { id: "3359", name: "Alan K Jojo Kattooppara", sclass: "X", sdiv: "", phone: "", remarks: "" },
-      { id: "3336", name: "Afron Rijo Velloor", sclass: "XI", sdiv: "A", phone: "7012133984", remarks: "" },
-      { id: "3331", name: "Alen Abraham Shibu Kochuparambil", sclass: "XI", sdiv: "A", phone: "9495265597", remarks: "" },
-      { id: "3596", name: "Aaron Bino Pazhoorakathu", sclass: "XII", sdiv: "B", phone: "9446831725", remarks: "" },
-      { id: "3272", name: "Abishek Biju Konnakal", sclass: "XII", sdiv: "B", phone: "9526601583", remarks: "" }
-    ];
+// Tab Switching Function
+function showTab(id) {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  let targetTab = document.getElementById(id);
+  if (targetTab) {
+    targetTab.classList.add('active');
+  }
+  if(id === 'lent') {
+    updateDatalists();
   }
 }
 
-// Handle Login Form Submit
-function handleLogin(e) {
-  e.preventDefault();
-  let email = document.getElementById('loginEmail').value;
-  let pass = document.getElementById('loginPassword').value;
-
-  auth.signInWithEmailAndPassword(email, pass)
-    .catch(error => {
-      alert("Login Failed: " + error.message);
-    });
-}
-
-// Handle Logout
-function handleLogout() {
-  auth.signOut().catch((error) => {
-    console.error("Logout Error: ", error);
-  });
-}
-
-// Monitor User Authentication State
-auth.onAuthStateChanged(user => {
-  if (user) {
-    document.getElementById('authScreen').style.display = 'none';
-    loadCloudData();
+// Real-Time Cloud Listener
+firestoreDb.collection("librarySystem").doc("mainDatabase").onSnapshot((doc) => {
+  if (doc.exists) {
+    db = doc.data();
+    if(!db.books) db.books = [];
+    if(!db.students) db.students = [];
+    if(!db.lent) db.lent = [];
+    
+    if(db.students.length === 0) {
+      db.students = [
+        { id: "3709", name: "Adam Thomas Sonu Porunnakottu", sclass: "1", sdiv: "A", phone: "9544051586", remarks: "" }
+      ];
+    }
+    renderAll();
   } else {
-    document.getElementById('authScreen').style.display = 'flex';
+    save();
   }
+}, (error) => {
+  console.error("Firestore sync error: ", error);
 });
 
-// Save Data to Cloud Firestore
 function save() {
-  ensureInitialStudents();
-  dbCloud.collection("libraryData").doc("mainStore").set(db)
+  firestoreDb.collection("librarySystem").doc("mainDatabase").set(db)
     .then(() => {
       renderAll();
     })
-    .catch(error => {
-      console.error("Error saving data: ", error);
+    .catch((error) => {
+      console.error("Error saving to cloud: ", error);
     });
 }
 
-// Load Data from Cloud Firestore
-function loadCloudData() {
-  dbCloud.collection("libraryData").doc("mainStore").get()
-    .then((doc) => {
-      if (doc.exists) {
-        db = doc.data();
-        ensureInitialStudents();
-      } else {
-        ensureInitialStudents();
-        save();
-      }
-      renderAll();
-    })
-    .catch((error) => {
-      console.log("Error loading data:", error);
-      ensureInitialStudents();
-      renderAll();
-    });
-}
+function val(id){return document.getElementById(id).value.trim()}
 
 function initFinancialYear() {
   let now = new Date();
   let y = now.getFullYear();
   let m = now.getMonth();
-  let fyearStr = m >= 3 ? y + "-" + (y+1) : (y-1) + "-" + y;
+  let fyearStr = m >= 3 ? `${y}-${y+1}` : `${y-1}-${y}`;
   let fyearInput = document.getElementById('fyear');
   if(fyearInput && !fyearInput.value) {
     fyearInput.value = fyearStr;
   }
 }
-
-function showTab(id){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');}
-function val(id){return document.getElementById(id).value.trim()}
 
 function addBook(e){
   e.preventDefault(); 
@@ -545,9 +412,83 @@ function editStudent(id) {
   window.scrollTo({top: 0, behavior: 'smooth'});
 }
 
+function importStudentsData(e) {
+  let file = e.target.files[0];
+  if(!file) return;
+  let reader = new FileReader();
+  reader.onload = function(evt) {
+    try {
+      let content = evt.target.result;
+      if(file.name.endsWith('.json')) {
+        let imported = JSON.parse(content);
+        if(Array.isArray(imported)) {
+          imported.forEach(imp => {
+            let existing = db.students.find(s => s.id === imp.id);
+            if(existing) {
+              existing.name = imp.name || existing.name;
+              existing.sclass = imp.sclass || existing.sclass;
+              existing.sdiv = imp.sdiv || existing.sdiv;
+              existing.phone = imp.phone || existing.phone;
+              existing.remarks = imp.remarks || existing.remarks;
+            } else {
+              db.students.push(imp);
+            }
+          });
+          save();
+          alert('Students successfully imported and synchronized to cloud!');
+        } else {
+          alert('Invalid JSON format: Expected an array.');
+        }
+      } else if(file.name.endsWith('.csv')) {
+        let lines = content.split('\n');
+        let addedCount = 0;
+        let updatedCount = 0;
+        for(let i=1; i<lines.length; i++) {
+          let line = lines[i].trim();
+          if(!line) continue;
+          let cols = line.split(',').map(c => c.replace(/^"|"$/g, '').trim());
+          if(cols.length >= 2) {
+            let sId = cols[0];
+            let sName = cols[1];
+            let sClass = cols[2] || '';
+            let sDiv = cols[3] || '';
+            let sPhone = cols[4] || '';
+            let sRemarks = cols[5] || '';
+            
+            let existing = db.students.find(s => s.id === sId);
+            if(existing) {
+              existing.name = sName;
+              existing.sclass = sClass;
+              existing.sdiv = sDiv;
+              existing.phone = sPhone;
+              existing.remarks = sRemarks;
+              updatedCount++;
+            } else {
+              db.students.push({ id: sId, name: sName, sclass: sClass, sdiv: sDiv, phone: sPhone, remarks: sRemarks });
+              addedCount++;
+            }
+          }
+        }
+        save();
+        alert(`CSV Import complete! Added: ${addedCount}, Updated: ${updatedCount}`);
+      } else {
+        alert('Please select a valid .json or .csv file.');
+      }
+    } catch(err) {
+      alert('Error parsing import file: ' + err.message);
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
 function openPromoteModal() {
-  document.getElementById('modalTitle').textContent = "Promote Students to Next Class";
-  let html = `<p>This will advance all students to their next consecutive class level. Class XII students will be marked as Graduated.</p><br><button type="button" onclick="executePromotion()">Confirm & Promote All Students</button>`;
+  document.getElementById('modalTitle').textContent = `Promote Students to Next Class`;
+  let html = `
+    <p>This will advance all students to their next consecutive class level (e.g., Class 1 becomes II, Class II becomes III, etc.). Class XII students will be marked as Graduated.</p>
+    <br>
+    <button type="button" onclick="executePromotion()">Confirm & Promote All Students</button>
+  `;
   document.getElementById('modalBody').innerHTML = html;
   document.getElementById('detailModal').classList.add('active');
 }
@@ -561,17 +502,17 @@ function executePromotion() {
   });
   save();
   closeModal();
-  alert('All students have been successfully promoted to their next class!');
+  alert('All students have been successfully promoted and updated in the cloud!');
 }
 
 function updateDatalists() {
   let sList = document.getElementById('studentNamesList');
   if(sList) {
-    sList.innerHTML = db.students.map(s => '<option value="' + s.name + '">').join('');
+    sList.innerHTML = db.students.map(s => `<option value="${s.name}"></option>`).join('');
   }
   let bList = document.getElementById('bookIdsList');
   if(bList) {
-    bList.innerHTML = db.books.map(b => '<option value="' + b.id + '">').join('');
+    bList.innerHTML = db.books.map(b => `<option value="${b.id}"></option>`).join('');
   }
 }
 
@@ -603,7 +544,7 @@ function lendBook(e){
   e.preventDefault();
   let nameVal = val('lsname');
   let s = db.students.find(x => x.name.toLowerCase() === nameVal.toLowerCase());
-  if(!s){alert('Student not found or select a valid student name.');return} 
+  if(!s){alert('Student not found or select a valid student name from the list.');return} 
   let sid = s.id;
   let bid = val('lbid');
   let b = db.books.find(x => x.id === bid);
@@ -645,9 +586,10 @@ function returnBook(dbIndex){
 }
 
 function clearLentRecords() {
-  if(confirm('Are you sure you want to clear all book issue records?')) {
+  if(confirm('Are you sure you want to clear all book issue records? This action cannot be undone.')) {
     db.lent = [];
     save();
+    alert('All book issue records have been successfully cleared.');
   }
 }
 
@@ -675,18 +617,35 @@ function getOverdueDays(dueDate) {
 function openOverdueModal() {
   db.lent.forEach(updateStatus);
   let overdueRecords = db.lent.filter(x => x.status === 'Overdue');
-  document.getElementById('modalTitle').textContent = "Overdue Books Report (" + overdueRecords.length + ")";
-  let html = "<h4>Currently Overdue Books & Students</h4>";
+  
+  document.getElementById('modalTitle').textContent = `Overdue Books Report (${overdueRecords.length})`;
+  
+  let html = `<h4>Currently Overdue Books & Students</h4>`;
+
   if(overdueRecords.length === 0) {
-    html += '<p class="small">No overdue books right now.</p>';
+    html += `<p class="small">No overdue books right now[cite: 1]!</p>`;
   } else {
-    html += '<div class="table-wrap"><table><thead><tr><th>Sl No.</th><th>Academic Year</th><th>Student Name</th><th>Class / Div</th><th>Book Title</th><th>Due Date</th><th>Days Overdue</th></tr></thead><tbody>';
-    html += overdueRecords.map((r, idx) => {
-      let days = getOverdueDays(r.due);
-      return '<tr><td>' + (idx + 1) + '</td><td>' + (r.fyear || '-') + '</td><td>' + r.studentName + '</td><td>' + (r.studentClass || '-') + ' / ' + (r.studentDivision || '-') + '</td><td>' + r.bookTitle + '<br><span class="small">' + r.bookId + '</span></td><td>' + r.due + '</td><td><span class="status overdue">' + days + ' day(s) overdue</span></td></tr>';
-    }).join('');
-    html += '</tbody></table></div>';
+    html += `
+      <div class="table-wrap"><table>
+        <thead><tr><th>Sl No.</th><th>Academic Year</th><th>Student Name</th><th>Class / Div</th><th>Book Title</th><th>Due Date</th><th>Days Overdue</th></tr></thead>
+        <tbody>
+          ${overdueRecords.map((r, idx) => {
+            let days = getOverdueDays(r.due);
+            return `<tr>
+              <td>${idx + 1}</td>
+              <td>${r.fyear || '-'}</td>
+              <td>${r.studentName}</td>
+              <td>${r.studentClass \vert{}\vert{} '-'} /${r.studentDivision || '-'}</td>
+              <td>${r.bookTitle}<br><span class="small">${r.bookId}</span></td>
+              <td>${r.due}</td>
+              <td><span class="status overdue">${days} day(s) overdue</span></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table></div>
+    `;
   }
+
   document.getElementById('modalBody').innerHTML = html;
   document.getElementById('detailModal').classList.add('active');
 }
@@ -694,21 +653,48 @@ function openOverdueModal() {
 function openStudentDetails(studentId) {
   let student = db.students.find(s => s.id === studentId);
   if(!student) return;
+  
   let records = db.lent.filter(x => x.studentId === studentId);
-  document.getElementById('modalTitle').textContent = "Student Details: " + student.name + " (" + student.id + ")";
-  let html = '<p><strong>Class:</strong> ' + (student.sclass || '-') + ' | <strong>Division:</strong> ' + (student.sdiv || '-') + ' | <strong>Phone:</strong> ' + (student.phone || '-') + '</p>';
-  html += '<h4>Lending History</h4>';
+  let totalLent = records.length;
+  let returnedCount = records.filter(x => x.status === 'Returned').length;
+  let activeCount = totalLent - returnedCount;
+
+  document.getElementById('modalTitle').textContent = `Student Details: ${student.name} (${student.id})`;
+  
+  let html = `
+    <p><strong>Class:</strong> ${student.sclass || '-'} | <strong>Division:</strong> ${student.sdiv || '-'} | <strong>Phone:</strong> ${student.phone || '-'}</p>
+    <p><strong>Total Books Borrowed:</strong> ${totalLent} | <span class="status returned">Returned: ${returnedCount}</span> | <span class="status overdue">Active: ${activeCount}</span></p>
+    <h4>Lending History</h4>
+  `;
+
   if(records.length === 0) {
-    html += '<p class="small">No borrowing history for this student.</p>';
+    html += `<p class="small">No borrowing history for this student.</p>`;
   } else {
-    html += '<div class="table-wrap"><table><thead><tr><th>Sl No.</th><th>Academic Year</th><th>Book Name</th><th>Book ID</th><th>Issue Date</th><th>Due Date</th><th>Return Date</th><th>Status</th></tr></thead><tbody>';
-    html += records.map((r, idx) => {
-      let statusText = r.status;
-      if(r.status === 'Overdue') { statusText = 'Overdue (' + getOverdueDays(r.due) + ' days late)'; }
-      return '<tr><td>' + (idx + 1) + '</td><td>' + (r.fyear || '-') + '</td><td>' + r.bookTitle + '</td><td>' + r.bookId + '</td><td>' + r.issue + '</td><td>' + r.due + '</td><td>' + (r.returnDate || '-') + '</td><td class="status ' + (r.status==='Overdue'?'overdue':r.status==='Returned'?'returned':'') + '">' + statusText + '</td></tr>';
-    }).join('');
-    html += '</tbody></table></div>';
+    html += `
+      <div class="table-wrap"><table>
+        <thead><tr><th>Sl No.</th><th>Academic Year</th><th>Book Name</th><th>Book ID</th><th>Issue Date</th><th>Due Date</th><th>Return Date</th><th>Status</th></tr></thead>
+        <tbody>
+          ${records.map((r, idx) => {
+            let statusText = r.status;
+            if(r.status === 'Overdue') {
+              statusText = `Overdue (${getOverdueDays(r.due)} days late)`;
+            }
+            return `<tr>
+              <td>${idx + 1}</td>
+              <td>${r.fyear || '-'}</td>
+              <td>${r.bookTitle}</td>
+              <td>${r.bookId}</td>
+              <td>${r.issue}</td>
+              <td>${r.due}</td>
+              <td>${r.returnDate || '-'}</td>
+              <td class="status ${r.status==='Overdue'?'overdue':r.status==='Returned'?'returned':''}">${statusText}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table></div>
+    `;
   }
+
   document.getElementById('modalBody').innerHTML = html;
   document.getElementById('detailModal').classList.add('active');
 }
@@ -716,21 +702,47 @@ function openStudentDetails(studentId) {
 function openBookDetails(bookId) {
   let book = db.books.find(b => b.id === bookId);
   if(!book) return;
+
   let records = db.lent.filter(x => x.bookId === bookId);
-  document.getElementById('modalTitle').textContent = "Book Details: " + book.title + " (ID: " + book.id + ")";
-  let html = '<p><strong>Author:</strong> ' + (book.author || '-') + ' | <strong>Publisher:</strong> ' + (book.publisher || '-') + ' | <strong>Shelf:</strong> ' + (book.shelf || '-') + '</p>';
-  html += '<h4>Student Borrowing History</h4>';
+  let totalLent = records.length;
+  let activeLent = records.filter(x => x.status !== 'Returned').length;
+
+  document.getElementById('modalTitle').textContent = `Book Details: ${book.title} (ID: ${book.id})`;
+
+  let html = `
+    <p><strong>Author:</strong> ${book.author || '-'} | <strong>Publisher:</strong> ${book.publisher || '-'} | <strong>Shelf:</strong> ${book.shelf || '-'}</p>
+    <p><strong>Total Times Issued:</strong> ${totalLent} | <span class="status overdue">Currently Lent Out: ${activeLent}</span></p>
+    <h4>Student Borrowing History</h4>
+  `;
+
   if(records.length === 0) {
-    html += '<p class="small">No borrowing history for this book yet.</p>';
+    html += `<p class="small">No borrowing history for this book yet.</p>`;
   } else {
-    html += '<div class="table-wrap"><table><thead><tr><th>Sl No.</th><th>Academic Year</th><th>Student Name</th><th>Class / Div</th><th>Issue Date</th><th>Due Date</th><th>Return Date</th><th>Status</th></tr></thead><tbody>';
-    html += records.map((r, idx) => {
-      let statusText = r.status;
-      if(r.status === 'Overdue') { statusText = 'Overdue (' + getOverdueDays(r.due) + ' days late)'; }
-      return '<tr><td>' + (idx + 1) + '</td><td>' + (r.fyear || '-') + '</td><td>' + r.studentName + '</td><td>' + (r.studentClass || '-') + ' / ' + (r.studentDivision || '-') + '</td><td>' + r.issue + '</td><td>' + r.due + '</td><td>' + (r.returnDate || '-') + '</td><td class="status ' + (r.status==='Overdue'?'overdue':r.status==='Returned'?'returned':'') + '">' + statusText + '</td></tr>';
-    }).join('');
-    html += '</tbody></table></div>';
+    html += `
+      <div class="table-wrap"><table>
+        <thead><tr><th>Sl No.</th><th>Academic Year</th><th>Student Name</th><th>Class / Div</th><th>Issue Date</th><th>Due Date</th><th>Return Date</th><th>Status</th></tr></thead>
+        <tbody>
+          ${records.map((r, idx) => {
+            let statusText = r.status;
+            if(r.status === 'Overdue') {
+              statusText = `Overdue (${getOverdueDays(r.due)} days late)`;
+            }
+            return `<tr>
+              <td>${idx + 1}</td>
+              <td>${r.fyear || '-'}</td>
+              <td>${r.studentName}</td>
+              <td>${r.studentClass \vert{}\vert{} '-'} /${r.studentDivision || '-'}</td>
+              <td>${r.issue}</td>
+              <td>${r.due}</td>
+              <td>${r.returnDate || '-'}</td>
+              <td class="status ${r.status==='Overdue'?'overdue':r.status==='Returned'?'returned':''}">${statusText}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table></div>
+    `;
   }
+
   document.getElementById('modalBody').innerHTML = html;
   document.getElementById('detailModal').classList.add('active');
 }
@@ -744,18 +756,40 @@ function renderBooks(){
   document.getElementById('bookRows').innerHTML=db.books.map((b,i)=>{
     let rowText = (b.id + ' ' + b.title + ' ' + b.author + ' ' + b.shelf).toLowerCase();
     if(!rowText.includes(q)) return '';
-    return '<tr><td>' + b.id + '</td><td>' + b.title + '</td><td>' + (b.author || '-') + '</td><td>' + (b.shelf || '-') + '</td><td class="actions"><button type="button" onclick="openBookDetails(\'' + b.id + '\')">Details</button><button type="button" class="secondary" onclick="editBook(\'' + b.id + '\')">Edit</button><button type="button" class="danger" onclick="delBook(' + i + ')">Delete</button></td></tr>';
+    return `<tr>
+      <td>${b.id}</td>
+      <td>${b.title}</td>
+      <td>${b.author || '-'}</td>
+      <td>${b.shelf || '-'}</td>
+      <td class="actions">
+        <button type="button" onclick="openBookDetails('${b.id}')">Details</button>
+        <button type="button" class="secondary" onclick="editBook('${b.id}')">Edit</button>
+        <button type="button" class="danger" onclick="delBook(${i})">Delete</button>
+      </td>
+    </tr>`;
   }).join('');
 }
 
 function renderStudents(){
   let q = (document.getElementById('studentSearch').value || '').toLowerCase();
   let selectedClass = document.getElementById('classFilter').value;
+
   document.getElementById('studentRows').innerHTML = db.students.map((s, i) => {
     let rowText = (s.id + ' ' + s.name + ' ' + s.sclass + ' ' + s.sdiv + ' ' + s.phone).toLowerCase();
     if(q && !rowText.includes(q)) return '';
     if(selectedClass && s.sclass !== selectedClass) return '';
-    return '<tr><td>' + s.id + '</td><td>' + s.name + '</td><td>Class: ' + (s.sclass||'-') + ' | Div: ' + (s.sdiv||'-') + '</td><td>' + (s.phone || '-') + '</td><td class="actions"><button type="button" onclick="openStudentDetails(\'' + s.id + '\')">Details</button><button type="button" class="secondary" onclick="editStudent(\'' + s.id + '\')">Edit</button><button type="button" class="danger" onclick="delStudent(' + i + ')">Delete</button></td></tr>';
+
+    return `<tr>
+      <td>${s.id}</td>
+      <td>${s.name}</td>
+      <td>Class: ${s.sclass||'-'} | Div: ${s.sdiv||'-'}</td>
+      <td>${s.phone || '-'}</td>
+      <td class="actions">
+        <button type="button" onclick="openStudentDetails('${s.id}')">Details</button>
+        <button type="button" class="secondary" onclick="editStudent('${s.id}')">Edit</button>
+        <button type="button" class="danger" onclick="delStudent(${i})">Delete</button>
+      </td>
+    </tr>`;
   }).join('');
 }
 
@@ -768,8 +802,21 @@ function renderLent(){
     let rowText = JSON.stringify(x).toLowerCase();
     if(!rowText.includes(q)) return '';
     let displayStatus = x.status;
-    if(x.status === 'Overdue') { displayStatus = 'Overdue (' + getOverdueDays(x.due) + ' days)'; }
-    return '<tr><td>' + (slNo++) + '</td><td>' + (x.fyear || '-') + '</td><td>' + x.studentName + '</td><td>' + x.studentId + '</td><td>' + (x.studentClass || '-') + ' / ' + (x.studentDivision || '-') + '</td><td>' + x.bookTitle + '<br><span class="small">' + x.bookId + '</span></td><td>' + x.issue + '</td><td>' + x.due + '</td><td>' + (x.returnDate || '-') + '</td><td class="status ' + (x.status==='Overdue'?'overdue':x.status==='Returned'?'returned':'') + '">' + displayStatus + '</td></tr>';
+    if(x.status === 'Overdue') {
+      displayStatus = `Overdue (${getOverdueDays(x.due)} days)`;
+    }
+    return `<tr>
+      <td>${slNo++}</td>
+      <td>${x.fyear || '-'}</td>
+      <td>${x.studentName}</td>
+      <td>${x.studentId}</td>
+      <td>${x.studentClass || '-'} / ${x.studentDivision || '-'}</td>
+      <td>${x.bookTitle}<br><span class="small">${x.bookId}</span></td>
+      <td>${x.issue}</td>
+      <td>${x.due}</td>
+      <td>${x.returnDate || '-'}</td>
+      <td class="status ${x.status==='Overdue'?'overdue':x.status==='Returned'?'returned':''}">${displayStatus}</td>
+    </tr>`;
   }).join('');
 }
 
@@ -777,13 +824,27 @@ function renderReturnTab(){
   db.lent.forEach(updateStatus);
   let q=(document.getElementById('returnSearch').value||'').toLowerCase();
   let activeLentRecords = db.lent.map((item, originalIndex) => ({item, originalIndex})).filter(obj => obj.item.status !== 'Returned');
+  
   let slNo = 1;
   document.getElementById('returnRows').innerHTML = activeLentRecords.map(({item: x, originalIndex: i})=>{
     let rowText = JSON.stringify(x).toLowerCase();
     if(!rowText.includes(q)) return '';
     let displayStatus = x.status;
-    if(x.status === 'Overdue') { displayStatus = 'Overdue (' + getOverdueDays(x.due) + ' days due)'; }
-    return '<tr><td>' + (slNo++) + '</td><td>' + (x.fyear || '-') + '</td><td>' + x.studentName + '</td><td>' + x.studentId + '</td><td>' + (x.studentClass || '-') + ' / ' + (x.studentDivision || '-') + '</td><td>' + x.bookTitle + '<br><span class="small">' + x.bookId + '</span></td><td>' + x.issue + '</td><td>' + x.due + '</td><td class="status ' + (x.status==='Overdue'?'overdue':'') + '">' + displayStatus + '</td><td><button type="button" onclick="returnBook(' + i + ')">Return Book</button></td></tr>';
+    if(x.status === 'Overdue') {
+      displayStatus = `Overdue (${getOverdueDays(x.due)} days due)`;
+    }
+    return `<tr>
+      <td>${slNo++}</td>
+      <td>${x.fyear || '-'}</td>
+      <td>${x.studentName}</td>
+      <td>${x.studentId}</td>
+      <td>${x.studentClass || '-'} / ${x.studentDivision || '-'}</td>
+      <td>${x.bookTitle}<br><span class="small">${x.bookId}</span></td>
+      <td>${x.issue}</td>
+      <td>${x.due}</td>
+      <td class="status ${x.status==='Overdue'?'overdue':''}">${displayStatus}</td>
+      <td><button type="button" onclick="returnBook(${i})">Return Book</button></td>
+    </tr>`;
   }).join('');
 }
 
@@ -791,15 +852,110 @@ function renderDashboardOverdueTable() {
   db.lent.forEach(updateStatus);
   let overdueRecords = db.lent.filter(x => x.status === 'Overdue');
   let tbody = document.getElementById('dashboardOverdueRows');
+  
   if(overdueRecords.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="small">No overdue items right now.</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="7" class="small">No overdue items right now[cite: 1].</td></tr>`;
     return;
   }
+
   let slNo = 1;
   tbody.innerHTML = overdueRecords.map(r => {
     let days = getOverdueDays(r.due);
-    return '<tr><td>' + (slNo++) + '</td><td>' + (r.fyear || '-') + '</td><td>' + r.studentName + '</td><td>' + (r.studentClass || '-') + ' / ' + (r.studentDivision || '-') + '</td><td>' + r.bookTitle + ' <span class="small">(' + r.bookId + ')</span></td><td>' + r.due + '</td><td><span class="status overdue">' + days + ' day(s) overdue</span></td></tr>';
+    return `<tr>
+      <td>${slNo++}</td>
+      <td>${r.fyear || '-'}</td>
+      <td>${r.studentName}</td>
+      <td>${r.studentClass || '-'} / ${r.studentDivision || '-'}</td>
+      <td>${r.bookTitle} <span class="small">(${r.bookId})</span></td>
+      <td>${r.due}</td>
+      <td><span class="status overdue">${days} day(s) overdue</span></td>
+    </tr>`;
   }).join('');
+}
+
+function downloadCSV(filename, csvContent) {
+  let blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  let url = URL.createObjectURL(blob);
+  let a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportBooksCSV() {
+  if(db.books.length === 0) { alert('No books available to export.'); return; }
+  let headers = ['Book ID', 'Title', 'Author', 'Publisher', 'Edition', 'Year', 'Shelf', 'Remarks'];
+  let rows = db.books.map(b => [
+    `"${b.id || ''}"`,
+    `"${(b.title || '').replace(/"/g, '""')}"`,
+    `"${(b.author || '').replace(/"/g, '""')}"`,
+    `"${(b.publisher || '').replace(/"/g, '""')}"`,
+    `"${(b.edition || '').replace(/"/g, '""')}"`,
+    `"${b.year || ''}"`,
+    `"${(b.shelf || '').replace(/"/g, '""')}"`,
+    `"${(b.remarks || '').replace(/"/g, '""')}"`
+  ]);
+  let csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  downloadCSV('books_export.csv', csv);
+}
+
+function exportStudentsCSV() {
+  if(db.students.length === 0) { alert('No students available to export.'); return; }
+  let headers = ['Student ID', 'Student Name', 'Class', 'Division', 'Phone', 'Remarks'];
+  let rows = db.students.map(s => [
+    `"${s.id || ''}"`,
+    `"${(s.name || '').replace(/"/g, '""')}"`,
+    `"${(s.sclass || '').replace(/"/g, '""')}"`,
+    `"${(s.sdiv || '').replace(/"/g, '""')}"`,
+    `"${(s.phone || '').replace(/"/g, '""')}"`,
+    `"${(s.remarks || '').replace(/"/g, '""')}"`
+  ]);
+  let csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  downloadCSV('students_export.csv', csv);
+}
+
+function exportLentCSV() {
+  if(db.lent.length === 0) { alert('No issue records available to export.'); return; }
+  let headers = ['Sl No.', 'Academic Year', 'Student Name', 'Student ID', 'Class', 'Division', 'Book ID', 'Book Title', 'Issue Date', 'Due Date', 'Return Date', 'Status'];
+  let rows = db.lent.map((x, idx) => [
+    `"${idx + 1}"`,
+    `"${x.fyear || ''}"`,
+    `"${(x.studentName || '').replace(/"/g, '""')}"`,
+    `"${x.studentId || ''}"`,
+    `"${(x.studentClass || '').replace(/"/g, '""')}"`,
+    `"${(x.studentDivision || '').replace(/"/g, '""')}"`,
+    `"${x.bookId || ''}"`,
+    `"${(x.bookTitle || '').replace(/"/g, '""')}"`,
+    `"${x.issue || ''}"`,
+    `"${x.due || ''}"`,
+    `"${x.returnDate || ''}"`,
+    `"${x.status || ''}"`
+  ]);
+  let csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  downloadCSV('book_issue_records_export.csv', csv);
+}
+
+function exportOverdueCSV() {
+  db.lent.forEach(updateStatus);
+  let overdueRecords = db.lent.filter(x => x.status === 'Overdue');
+  if(overdueRecords.length === 0) { alert('No overdue records available to export.'); return; }
+  let headers = ['Sl No.', 'Academic Year', 'Student Name', 'Student ID', 'Class', 'Division', 'Book ID', 'Book Title', 'Issue Date', 'Due Date', 'Days Overdue'];
+  let rows = overdueRecords.map((r, idx) => [
+    `"${idx + 1}"`,
+    `"${r.fyear || ''}"`,
+    `"${(r.studentName || '').replace(/"/g, '""')}"`,
+    `"${r.studentId || ''}"`,
+    `"${(r.studentClass || '').replace(/"/g, '""')}"`,
+    `"${(r.studentDivision || '').replace(/"/g, '""')}"`,
+    `"${r.bookId || ''}"`,
+    `"${(r.bookTitle || '').replace(/"/g, '""')}"`,
+    `"${r.issue || ''}"`,
+    `"${r.due || ''}"`,
+    `"${getOverdueDays(r.due)}"`
+  ]);
+  let csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  downloadCSV('overdue_records_export.csv', csv);
 }
 
 function backup(){
@@ -816,7 +972,13 @@ function restore(){
   input.onchange=e=>{
     let f=e.target.files[0],r=new FileReader();
     r.onload=()=>{
-      try{db=JSON.parse(r.result);save();alert('Backup restored.')}catch{alert('Invalid backup file.')}
+      try{
+        db = JSON.parse(r.result);
+        save();
+        alert('Cloud backup restored successfully!');
+      }catch{
+        alert('Invalid backup file.');
+      }
     };
     r.readAsText(f);
   };
@@ -841,5 +1003,4 @@ function renderAll(){
 initFinancialYear();
 document.getElementById('issue').value=new Date().toISOString().slice(0,10);
 </script>
-</body>
-</html>
+</body></html>
